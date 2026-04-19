@@ -1,6 +1,7 @@
 package pack;
 
 import java.awt.BasicStroke;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Font;
@@ -12,6 +13,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
 import java.util.Scanner;
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -19,6 +23,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
+import javax.swing.Timer;
+import javax.swing.border.EmptyBorder;
 
 public class Game {
 	playersetup PS = new playersetup();
@@ -36,7 +42,9 @@ public class Game {
 	//wNLabel(Weapon Number Label), resLabel()
 	Font tFont = new Font("Times New Roman", Font.PLAIN, 90);//title Font
 	Font nFont = new Font("Times New Roman", Font.PLAIN, 30);//normal Font
-	JButton sButton,c1,c2,c3,c4,invButton;
+	Font sFont = new Font("Times New Roman", Font.PLAIN, 40);//start Font
+	AnimatedChoiceButton sButton;
+	AnimatedChoiceButton c1,c2,c3,c4,invButton;
 	JTextArea mTArea;//main text area
 	TitleScreenHandler TSHandler = new TitleScreenHandler();
 	ChoiceHandler cHandler = new ChoiceHandler();
@@ -87,10 +95,12 @@ public class Game {
 		sBPanel.setBounds(360,480,240,120);
 		sBPanel.setBackground(Color.black);
 		
-		sButton = new JButton("START");
-		sButton.setBackground(Color.black);
-		sButton.setForeground(Color.white);
-		sButton.setFont(nFont);
+		sButton = new AnimatedChoiceButton();
+		sButton.setText("START");
+		sButton.setBackground(Color.white);
+		sButton.setForeground(Color.black);
+		sButton.setFont(sFont);
+		sButton.setButtonColors(Color.white, Color.black, Color.white);
 		sButton.addActionListener(TSHandler);
 		sButton.setFocusPainted(false);
 		
@@ -122,16 +132,16 @@ public class Game {
 			return;
 		}
 
-		int mainW = (int)(winW * 0.72);
+		int mainW = (int)(winW * 0.76);
 		int mainX = (winW - mainW) / 2;
 		int titleY = (int)(winH * 0.16);
 		int titleH = (int)(winH * 0.26);
 		int mainY = (int)(winH * 0.18);
-		int mainH = (int)(winH * 0.44);
-		int choiceW = (int)(winW * 0.36);
-		int choiceH = (int)(winH * 0.26);
+		int mainH = (int)(winH * 0.40);
+		int choiceW = (int)(winW * 0.52);
+		int choiceH = (int)(winH * 0.34);
 		int choiceX = (winW - choiceW) / 2;
-		int choiceY = (int)(winH * 0.62);
+		int choiceY = (int)(winH * 0.58);
 		int startW = (int)(winW * 0.24);
 		int startH = (int)(winH * 0.18);
 		int startX = (winW - startW) / 2;
@@ -145,10 +155,32 @@ public class Game {
 		if(cBPanel!=null) cBPanel.setBounds(choiceX, choiceY, choiceW, choiceH);
 		if(pPanel!=null) pPanel.setBounds(mainX, playerY, mainW, playerH);
 
+		int dynamicNormal = Math.max(16, Math.min(36, winW / 32));
+		int dynamicTitle = Math.max(40, Math.min(120, winW / 11));
+		int dynamicStart = Math.max(20, Math.min(54, winW / 18));
+		nFont = new Font("Times New Roman", Font.PLAIN, dynamicNormal);
+		tFont = new Font("Times New Roman", Font.PLAIN, dynamicTitle);
+		sFont = new Font("Times New Roman", Font.PLAIN, dynamicStart);
+		if(tNLabel!=null) tNLabel.setFont(tFont);
+		if(mTArea!=null) mTArea.setFont(nFont);
+		if(c1!=null) c1.setFont(nFont);
+		if(c2!=null) c2.setFont(nFont);
+		if(c3!=null) c3.setFont(nFont);
+		if(c4!=null) c4.setFont(nFont);
+		if(hLabel!=null) hLabel.setFont(nFont);
+		if(hNLabel!=null) hNLabel.setFont(nFont);
+		if(wLabel!=null) wLabel.setFont(nFont);
+		if(wNLabel!=null) wNLabel.setFont(nFont);
+		if(sButton!=null) sButton.setFont(sFont);
+
 		if(invButton!=null && cBPanel!=null) {
 			int cellSize = Math.max(30, choiceH / 4);
 			int gap = Math.max(12, winW / 80);
-			invButton.setBounds(choiceX + choiceW + gap, choiceY, cellSize, cellSize);
+			int invX = choiceX + choiceW + gap;
+			if(invX + cellSize > winW - 20) {
+				invX = winW - cellSize - 20;
+			}
+			invButton.setBounds(invX, choiceY, cellSize, cellSize);
 			updateInventoryButtonIcon(cellSize);
 		}
 
@@ -164,24 +196,28 @@ public class Game {
 		mTPanel = new JPanel();
 		mTPanel.setBounds(120,120,720,300);
 		mTPanel.setBackground(Color.black);
+		mTPanel.setLayout(new BorderLayout());
 		con.add(mTPanel);
 		
-		mTArea = new JTextArea();
+		mTArea = new TypewriterTextArea();
 		mTArea.setBounds(120,120, 720,300);
 		mTArea.setBackground(Color.black);
 		mTArea.setForeground(Color.white);
 		mTArea.setFont(nFont);
 		mTArea.setLineWrap(true);
-		mTPanel.add(mTArea);
+		mTArea.setWrapStyleWord(true);
+		mTArea.setBorder(new EmptyBorder(8, 10, 8, 10));
+		mTArea.setEditable(false);
+		mTPanel.add(mTArea, BorderLayout.CENTER);
 		
 		cBPanel = new JPanel();
 		cBPanel.setBounds(300,420,360,180);
 		cBPanel.setBackground(Color.black);
-		cBPanel.setLayout(new GridLayout(4,1));
+		cBPanel.setLayout(new GridLayout(4,1,0,8));
 		
 		con.add(cBPanel);
 
-		c1 = new JButton();
+		c1 = new AnimatedChoiceButton();
 		c1.setBackground(Color.black);
 		c1.setForeground(Color.white);
 		c1.setFont(nFont);
@@ -190,7 +226,7 @@ public class Game {
 		c1.setActionCommand("cho1");
 		cBPanel.add(c1);
 		
-		c2 = new JButton();
+		c2 = new AnimatedChoiceButton();
 		c2.setBackground(Color.black);
 		c2.setForeground(Color.white);
 		c2.setFont(nFont);
@@ -199,7 +235,7 @@ public class Game {
 		c2.setActionCommand("cho2");
 		cBPanel.add(c2);
 		
-		c3 = new JButton();
+		c3 = new AnimatedChoiceButton();
 		c3.setBackground(Color.black);
 		c3.setForeground(Color.white);
 		c3.setFont(nFont);
@@ -208,7 +244,7 @@ public class Game {
 		c3.setActionCommand("cho3");
 		cBPanel.add(c3);
 
-		c4 = new JButton();
+		c4 = new AnimatedChoiceButton();
 		c4.setBackground(Color.black);
 		c4.setForeground(Color.white);
 		c4.setFont(nFont);
@@ -217,7 +253,7 @@ public class Game {
 		c4.setActionCommand("cho4");
 		cBPanel.add(c4);
 
-		invButton = new JButton();
+		invButton = new AnimatedChoiceButton();
 		invButton.setBackground(Color.black);
 		invButton.setForeground(Color.white);
 		invButton.setFont(nFont);
@@ -226,6 +262,8 @@ public class Game {
 		invButton.setContentAreaFilled(false);
 		invButton.addActionListener(iHandler);
 		con.add(invButton);
+		invButton.setVisible(true);
+		invButton.setEnabled(true);
 		
 		pPanel = new JPanel();
 		pPanel.setBounds(120,18,720,60);
@@ -253,8 +291,17 @@ public class Game {
 		pPanel.add(wNLabel);
 
 		updateLayout();
+		playChoicePopup();
+		sButton.playPopup();
 		
 		player();		
+	}
+
+	public void playChoicePopup() {
+		if(c1!=null) c1.playPopup();
+		if(c2!=null) c2.playPopup();
+		if(c3!=null) c3.playPopup();
+		if(c4!=null) c4.playPopup();
 	}
 
 	public void updateInventoryButtonIcon(int buttonSize) {
@@ -283,7 +330,11 @@ public class Game {
 			return;
 		}
 		position = inventoryReturnPosition;
-		mTArea.setText(inventoryReturnText);
+		if(mTArea instanceof TypewriterTextArea) {
+			((TypewriterTextArea)mTArea).setImmediateText(inventoryReturnText);
+		}else {
+			mTArea.setText(inventoryReturnText);
+		}
 		c1.setText(inventoryReturnC1);
 		c2.setText(inventoryReturnC2);
 		c3.setText(inventoryReturnC3);
@@ -312,8 +363,8 @@ public class Game {
 		position ="setting";
 		mTArea.setText("MENU");
 		c1.setText("Status");
-		c2.setText("Inventory");
-		c3.setText("Go back");
+		c2.setText("Go back");
+		c3.setText("");
 		c4.setText("");
 		
 	}
@@ -739,6 +790,8 @@ public class Game {
 		c2.setVisible(false);
 		c3.setVisible(false);
 		c4.setVisible(false);
+		invButton.setEnabled(false);
+		invButton.setVisible(false);
 		
 	}
 	public void win() {
@@ -754,6 +807,8 @@ public class Game {
 		c2.setVisible(false);
 		c3.setVisible(false);
 		c4.setVisible(false);
+		invButton.setEnabled(false);
+		invButton.setVisible(false);
 		
 	}
 		
@@ -812,6 +867,138 @@ public class Game {
 			g2.drawLine(x + (int)(size * 0.66), y + (int)(size * 0.38), x + (int)(size * 0.66), y + (int)(size * 0.74));
 			g2.drawLine(x + (int)(size * 0.24), y + (int)(size * 0.56), x + (int)(size * 0.76), y + (int)(size * 0.56));
 			g2.dispose();
+		}
+	}
+
+	public static class AnimatedChoiceButton extends JButton {
+		private float scale = 1.0f;
+		private Timer animTimer;
+		private Color fillColor = new Color(18, 18, 18);
+		private Color hoverFillColor = new Color(36, 36, 36);
+		private Color borderColor = new Color(220, 220, 220);
+
+		public AnimatedChoiceButton() {
+			setOpaque(false);
+			setFocusPainted(false);
+			setBorderPainted(false);
+			setContentAreaFilled(false);
+			setForeground(Color.white);
+			setBackground(Color.black);
+			setRolloverEnabled(true);
+
+			addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseEntered(MouseEvent e) {
+					animateTo(1.04f, 90);
+				}
+
+				@Override
+				public void mouseExited(MouseEvent e) {
+					animateTo(1.0f, 100);
+				}
+			});
+		}
+
+		public void playPopup() {
+			scale = 0.86f;
+			repaint();
+			animateTo(1.0f, 120);
+		}
+
+		public void setButtonColors(Color fill, Color text, Color border) {
+			fillColor = fill;
+			hoverFillColor = fill.brighter();
+			borderColor = border;
+			setForeground(text);
+			repaint();
+		}
+
+		private void animateTo(float target, int durationMs) {
+			if(animTimer!=null && animTimer.isRunning()) {
+				animTimer.stop();
+			}
+			final int frames = 8;
+			final float start = scale;
+			final float delta = target - start;
+			animTimer = new Timer(Math.max(10, durationMs / frames), null);
+			animTimer.addActionListener(new ActionListener() {
+				int step = 0;
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					step++;
+					float t = step / (float) frames;
+					scale = start + (delta * t);
+					repaint();
+					if(step>=frames) {
+						scale = target;
+						animTimer.stop();
+					}
+				}
+			});
+			animTimer.start();
+		}
+
+		@Override
+		protected void paintComponent(Graphics g) {
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+			int w = getWidth();
+			int h = getHeight();
+			AffineTransform old = g2.getTransform();
+			g2.translate(w * (1f - scale) / 2f, h * (1f - scale) / 2f);
+			g2.scale(scale, scale);
+
+			Color base = getModel().isRollover() ? hoverFillColor : fillColor;
+			g2.setColor(base);
+			g2.fillRoundRect(1, 1, w - 3, h - 3, h - 2, h - 2);
+			g2.setColor(borderColor);
+			g2.setStroke(new BasicStroke(2f));
+			g2.drawRoundRect(1, 1, w - 3, h - 3, h - 2, h - 2);
+
+			super.paintComponent(g2);
+			g2.setTransform(old);
+			g2.dispose();
+		}
+	}
+
+	public static class TypewriterTextArea extends JTextArea {
+		private Timer typeTimer;
+
+		@Override
+		public void setText(String text) {
+			if(typeTimer!=null && typeTimer.isRunning()) {
+				typeTimer.stop();
+			}
+			final String full = (text==null) ? "" : text;
+			super.setText("");
+			if(full.isEmpty()) {
+				return;
+			}
+			final int[] i = new int[] {0};
+			typeTimer = new Timer(9, null);
+			typeTimer.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					i[0]++;
+					superSet(full.substring(0, Math.min(i[0], full.length())));
+					if(i[0] >= full.length()) {
+						typeTimer.stop();
+					}
+				}
+			});
+			typeTimer.start();
+		}
+
+		public void setImmediateText(String text) {
+			if(typeTimer!=null && typeTimer.isRunning()) {
+				typeTimer.stop();
+			}
+			super.setText(text==null ? "" : text);
+		}
+
+		private void superSet(String text) {
+			super.setText(text);
 		}
 	}
 	public class ChoiceHandler implements ActionListener{
@@ -915,11 +1102,8 @@ public class Game {
 			case "setting":
 				switch(yChoice) {
 				case "cho1": status(); break;
-				case "cho2": 
-					prevp="setting";
-					inventory(); 
-					break; 
-				case "cho3": tg();break;
+				case "cho2": tg();break;
+				case "cho3": break;
 				case "cho4":;break;
 				}
 				break;
@@ -1089,6 +1273,7 @@ public class Game {
 			break;
 
 			}
+			playChoicePopup();
 			
 		}
 	}
