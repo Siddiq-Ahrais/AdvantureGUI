@@ -115,3 +115,4 @@ Advanture/
 - This project uses Java Swing for GUI rendering.
 - Game balance and drop rates can be tuned further in `Game.java`.
 - Some class names and text intentionally preserve original project naming style.
+- at the beginning this project was 100% human-made with purpose to learning Java, since there are AI-tools, i'm start polish and change some algorithm with AI
