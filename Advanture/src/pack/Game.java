@@ -178,6 +178,15 @@ public class Game {
 		if(hNLabel!=null) hNLabel.setFont(nFont);
 		if(wLabel!=null) wLabel.setFont(nFont);
 		if(wNLabel!=null) wNLabel.setFont(nFont);
+		if(pPanel!=null && hLabel!=null && hNLabel!=null && wLabel!=null && wNLabel!=null) {
+			int pW = pPanel.getWidth();
+			int pH = pPanel.getHeight();
+			int midY = Math.max(2, pH / 2 - dynamicNormal / 2);
+			hLabel.setBounds(6, midY, Math.max(80, pW / 8), dynamicNormal + 10);
+			hNLabel.setBounds(Math.max(90, pW / 8), midY, Math.max(90, pW / 10), dynamicNormal + 10);
+			wLabel.setBounds(Math.max(200, pW / 3), midY, Math.max(170, pW / 5), dynamicNormal + 10);
+			wNLabel.setBounds(Math.max(380, pW / 2), midY, Math.max(280, pW / 3), dynamicNormal + 10);
+		}
 		if(sButton!=null) sButton.setFont(sFont);
 
 		if(invButton!=null && cBPanel!=null) {
@@ -193,12 +202,8 @@ public class Game {
 
 		if(settingButton!=null && pPanel!=null) {
 			int setSize = Math.max(24, playerH - 6);
-			int setGap = Math.max(10, winW / 120);
-			int setX = mainX - setSize - setGap;
-			if(setX < 8) {
-				setX = 8;
-			}
-			int setY = playerY + (playerH - setSize) / 2;
+			int setX = 10;
+			int setY = 10;
 			settingButton.setBounds(setX, setY, setSize, setSize);
 			updateSettingButtonIcon(setSize);
 		}
@@ -299,7 +304,7 @@ public class Game {
 		pPanel = new JPanel();
 		pPanel.setBounds(120,18,720,60);
 		pPanel.setBackground(Color.black);
-		pPanel.setLayout(new GridLayout(1,4));
+		pPanel.setLayout(null);
 		con.add(pPanel);
 		hLabel = new JLabel("HP : ");
 		hLabel.setFont(nFont);
@@ -382,10 +387,24 @@ public class Game {
 		
 		Wp="Knife";
 		
-		wNLabel.setText(Wp);
+		setWeaponLabel();
 		hNLabel.setText("" + pHP);
 		
 		tg();
+	}
+
+	public void setWeaponLabel() {
+		String showName = Wp;
+		if(Wp.equals("Void Nature Glass Sword")) {
+			showName = "Void NG Sword";
+		} else if(Wp.equals("Dynian Sword")) {
+			showName = "Dynian Sword";
+		} else if(Wp.equals("Steel Sword")) {
+			showName = "Steel Sword";
+		} else if(Wp.equals("Old Sword")) {
+			showName = "Old Sword";
+		}
+		wNLabel.setText(showName);
 	}
 	public void tg() {//townGate
 		position ="tg";
@@ -708,16 +727,12 @@ public class Game {
 
 	public void southLookAround() {
 		position = "southLAround";
-		mTArea.setText("You look around in the South.\n\nCollect Herb chance:\n"
-				+ "Absolute Nature Glass: 2%\n"
-				+ "Super Rare Nature Glass: 28%\n"
-				+ "Rare Nature Glass: 20%\n"
-				+ "Nature Glass: 50%\n\n"
-				+ "Search random item chance:\n"
-				+ "Void Nature Glass Sword: 2%\n"
-				+ "Dynian Sword: 28%\n"
-				+ "Steel Sword: 20%\n"
-				+ "Old Sword: 50%");
+		mTArea.setText("You look around in the South.\n\n"
+				+ "Grass Drop Chance          Weapon Drop Chance\n"
+				+ "Absolute Nature: 2%        Void NG Sword: 2%\n"
+				+ "Super Rare Nature: 28%     Dynian Sword: 28%\n"
+				+ "Rare Nature: 20%           Steel Sword: 20%\n"
+				+ "Nature: 50%                Old Sword: 50%");
 		c1.setText("Collect Herb");
 		c2.setText("Search random item (?)");
 		c3.setText("Rest");
@@ -730,22 +745,22 @@ public class Game {
 			vsword = 1;
 			mTArea.setText("You get a Void Nature Glass Sword");
 			Wp="Void Nature Glass Sword";
-			wNLabel.setText(Wp);
+			setWeaponLabel();
 		}else if(chan<0.3) {
 			dsword =1;
 			Wp="Dynian Sword";
-			wNLabel.setText(Wp);
+			setWeaponLabel();
 			mTArea.setText("You get a Dynian Sword");
 		}else if(chan<0.5) {
 			sword=1;
 			mTArea.setText("You get a Steel Sword");
 			Wp="Steel Sword";
-			wNLabel.setText(Wp);
+			setWeaponLabel();
 		}else{
 			osword=1;
 			mTArea.setText("You get a Old Sword");
-			wNLabel.setText(Wp);
 			Wp="Old Sword";
+			setWeaponLabel();
 		}
 		c1.setText("Collect Herb");
 		c2.setText("Rest");
