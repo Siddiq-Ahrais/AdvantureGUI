@@ -334,10 +334,51 @@ public class Game {
 	}
 
 	public void playChoicePopup() {
-		if(c1!=null) c1.playPopup();
-		if(c2!=null) c2.playPopup();
-		if(c3!=null) c3.playPopup();
-		if(c4!=null) c4.playPopup();
+		updateChoiceButtonState(c1);
+		updateChoiceButtonState(c2);
+		updateChoiceButtonState(c3);
+		updateChoiceButtonState(c4);
+		if(c1!=null && c1.isVisible()) c1.playPopup();
+		if(c2!=null && c2.isVisible()) c2.playPopup();
+		if(c3!=null && c3.isVisible()) c3.playPopup();
+		if(c4!=null && c4.isVisible()) c4.playPopup();
+	}
+
+	public void updateChoiceButtonState(AnimatedChoiceButton button) {
+		if(button==null) {
+			return;
+		}
+		if("death".equals(position) || "end".equals(position)) {
+			button.setVisible(false);
+			button.setEnabled(false);
+			return;
+		}
+
+		button.setVisible(true);
+		String txt = button.getText()==null ? "" : button.getText().trim();
+
+		// Keep Silver Ring requirement styling intact in the guard requirement scene.
+		if(button==c1 && "how".equals(position) && sRing!=1) {
+			button.setEnabled(false);
+			button.setButtonColors(new Color(18, 18, 18, 128), new Color(255, 255, 255, 128), new Color(220, 220, 220, 128));
+			return;
+		}
+
+		if(txt.length()==0) {
+			button.setEnabled(false);
+			button.setButtonColors(new Color(18, 18, 18, 0), new Color(255, 255, 255, 0), new Color(220, 220, 220, 0));
+		}else if(txt.length()<2) {
+			if(txt.equals("<") || txt.equals(">")) {
+				button.setEnabled(true);
+				button.setButtonColors(new Color(18, 18, 18), Color.white, new Color(220, 220, 220));
+			}else {
+				button.setEnabled(false);
+				button.setButtonColors(new Color(18, 18, 18, 0), new Color(255, 255, 255, 0), new Color(220, 220, 220, 0));
+			}
+		}else {
+			button.setEnabled(true);
+			button.setButtonColors(new Color(18, 18, 18), Color.white, new Color(220, 220, 220));
+		}
 	}
 
 	public void updateInventoryButtonIcon(int buttonSize) {
@@ -365,6 +406,7 @@ public class Game {
 		inventoryReturnC4 = c4.getText();
 		prevp = "shortcutInventory";
 		inventory();
+		playChoicePopup();
 	}
 
 	public void restoreFromInventoryShortcut() {
@@ -391,6 +433,7 @@ public class Game {
 		hNLabel.setText("" + pHP);
 		
 		tg();
+		playChoicePopup();
 	}
 
 	public void setWeaponLabel() {
@@ -803,6 +846,9 @@ public class Game {
 		
 	}	
 	public void fight() {
+		if(monHP<1) {
+			monHP = 25;
+		}
 		position ="fight";
 		mTArea.setText("You choose to fight\nMonster HP: "+monHP);
 		
@@ -930,6 +976,7 @@ public class Game {
 		public void actionPerformed(ActionEvent event) {
 			if(position!=null && !position.equals("end") && !position.equals("death")) {
 				setting();
+				playChoicePopup();
 			}
 		}
 	}
@@ -1151,10 +1198,6 @@ public class Game {
 		public void actionPerformed(ActionEvent event) {
 			
 			String yChoice = event.getActionCommand();
-			if(c1!=null) {
-				c1.setEnabled(true);
-				c1.setButtonColors(new Color(18, 18, 18), Color.white, new Color(220, 220, 220));
-			}
 			
 			
 			switch(position) {
@@ -1426,7 +1469,13 @@ public class Game {
 				}
 				break;
 			
-			case "cho2": eatGrass(); break; 
+			case "cho2": 
+				if(hasAnyGrass()) {
+					eatGrass();
+				}else {
+					inventory();
+				}
+				break; 
 			case "cho3": grassLeft(); break;
 			case "cho4": grassRight(); break;
 			}
