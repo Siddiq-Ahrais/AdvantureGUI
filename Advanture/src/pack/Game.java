@@ -1,15 +1,19 @@
 package pack;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
-
-
 import java.awt.Container;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridLayout;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.Scanner;
-
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -32,16 +36,24 @@ public class Game {
 	//wNLabel(Weapon Number Label), resLabel()
 	Font tFont = new Font("Times New Roman", Font.PLAIN, 90);//title Font
 	Font nFont = new Font("Times New Roman", Font.PLAIN, 30);//normal Font
-	JButton sButton,c1,c2,c3,c4;
+	JButton sButton,c1,c2,c3,c4,invButton;
 	JTextArea mTArea;//main text area
 	TitleScreenHandler TSHandler = new TitleScreenHandler();
 	ChoiceHandler cHandler = new ChoiceHandler();
+	InventoryButtonHandler iHandler = new InventoryButtonHandler();
 	int pHP=15;//player HP
 	String Wp;//weapon
 	String position;
 	Scanner scan = new Scanner(System.in);
 	String enter;
 	String prevp = "";
+	String inventoryReturnPosition = "";
+	String inventoryReturnText = "";
+	String inventoryReturnC1 = "";
+	String inventoryReturnC2 = "";
+	String inventoryReturnC3 = "";
+	String inventoryReturnC4 = "";
+	int selectedGrassIndex = 0;
 	int playerD,monD,ng;//absolute nature glass
 	int ngm;//super rare nature glass
 	int ngh;//rare nature glass
@@ -62,7 +74,6 @@ public class Game {
 		gwindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		gwindow.getContentPane().setBackground(Color.black);
 		gwindow.setLayout(null);
-		gwindow.setVisible(true);
 		con = gwindow.getContentPane();
 		
 		tNPanel = new JPanel();
@@ -87,9 +98,62 @@ public class Game {
 		sBPanel.add(sButton);
 		con.add(tNPanel);
 		con.add(sBPanel);
+
+		gwindow.addComponentListener(new ComponentAdapter() {
+			@Override
+			public void componentResized(ComponentEvent e) {
+				updateLayout();
+			}
+		});
+
+		updateLayout();
+		gwindow.revalidate();
+		gwindow.repaint();
+		gwindow.setVisible(true);
 		
 		
 		
+	}
+
+	public void updateLayout() {
+		int winW = gwindow.getContentPane().getWidth();
+		int winH = gwindow.getContentPane().getHeight();
+		if(winW<=0 || winH<=0) {
+			return;
+		}
+
+		int mainW = (int)(winW * 0.72);
+		int mainX = (winW - mainW) / 2;
+		int titleY = (int)(winH * 0.16);
+		int titleH = (int)(winH * 0.26);
+		int mainY = (int)(winH * 0.18);
+		int mainH = (int)(winH * 0.44);
+		int choiceW = (int)(winW * 0.36);
+		int choiceH = (int)(winH * 0.26);
+		int choiceX = (winW - choiceW) / 2;
+		int choiceY = (int)(winH * 0.62);
+		int startW = (int)(winW * 0.24);
+		int startH = (int)(winH * 0.18);
+		int startX = (winW - startW) / 2;
+		int startY = (int)(winH * 0.71);
+		int playerY = (int)(winH * 0.03);
+		int playerH = (int)(winH * 0.09);
+
+		if(tNPanel!=null) tNPanel.setBounds(mainX, titleY, mainW, titleH);
+		if(sBPanel!=null) sBPanel.setBounds(startX, startY, startW, startH);
+		if(mTPanel!=null) mTPanel.setBounds(mainX, mainY, mainW, mainH);
+		if(cBPanel!=null) cBPanel.setBounds(choiceX, choiceY, choiceW, choiceH);
+		if(pPanel!=null) pPanel.setBounds(mainX, playerY, mainW, playerH);
+
+		if(invButton!=null && cBPanel!=null) {
+			int cellSize = Math.max(30, choiceH / 4);
+			int gap = Math.max(12, winW / 80);
+			invButton.setBounds(choiceX + choiceW + gap, choiceY, cellSize, cellSize);
+			updateInventoryButtonIcon(cellSize);
+		}
+
+		con.revalidate();
+		con.repaint();
 	}
 
 	public void createGameScreen() {
@@ -152,6 +216,16 @@ public class Game {
 		c4.addActionListener(cHandler);
 		c4.setActionCommand("cho4");
 		cBPanel.add(c4);
+
+		invButton = new JButton();
+		invButton.setBackground(Color.black);
+		invButton.setForeground(Color.white);
+		invButton.setFont(nFont);
+		invButton.setFocusPainted(false);
+		invButton.setBorderPainted(false);
+		invButton.setContentAreaFilled(false);
+		invButton.addActionListener(iHandler);
+		con.add(invButton);
 		
 		pPanel = new JPanel();
 		pPanel.setBounds(120,18,720,60);
@@ -177,8 +251,44 @@ public class Game {
 		wNLabel.setFont(nFont);
 		wNLabel.setForeground(Color.white);
 		pPanel.add(wNLabel);
+
+		updateLayout();
 		
 		player();		
+	}
+
+	public void updateInventoryButtonIcon(int buttonSize) {
+		int iconSize = Math.max(18, buttonSize - 8);
+		invButton.setIcon(new BagIcon(iconSize, Color.white));
+		invButton.setText("");
+	}
+
+	public void openInventoryShortcut() {
+		if(position==null || position.equals("inventory")) {
+			return;
+		}
+
+		inventoryReturnPosition = position;
+		inventoryReturnText = mTArea.getText();
+		inventoryReturnC1 = c1.getText();
+		inventoryReturnC2 = c2.getText();
+		inventoryReturnC3 = c3.getText();
+		inventoryReturnC4 = c4.getText();
+		prevp = "shortcutInventory";
+		inventory();
+	}
+
+	public void restoreFromInventoryShortcut() {
+		if(inventoryReturnPosition.equals("")) {
+			return;
+		}
+		position = inventoryReturnPosition;
+		mTArea.setText(inventoryReturnText);
+		c1.setText(inventoryReturnC1);
+		c2.setText(inventoryReturnC2);
+		c3.setText(inventoryReturnC3);
+		c4.setText(inventoryReturnC4);
+		inventoryReturnPosition = "";
 	}
 	public void player(){
 		
@@ -209,46 +319,56 @@ public class Game {
 	}
 	public void inventory() {//townGate
 		position ="inventory";
+		ensureSelectedGrassAvailable();
+		StringBuilder invText = new StringBuilder();
 		if(ng>=1) {
-			mTArea.setText("Nature Glass Lower-Grade");
+			invText.append("Nature Glass Lower-Grade\n");
 		}else {
 			
 		}
 		if(ngm>=1) {
-			mTArea.setText("Nature Glass Medium-Grade");
+			invText.append("Nature Glass Medium-Grade\n");
 		}else {
 			
 		}
 		if(ngh>=1) {
-			mTArea.setText("Super Rare Nature Glass High-Grade");
+			invText.append("Super Rare Nature Glass High-Grade\n");
 		}else {
 			
 		}
 		if(nghs>=1) {
-			mTArea.setText("Absolute Nature Glass Highest-Grade");
+			invText.append("Absolute Nature Glass Highest-Grade\n");
 		}else {
 			
 		}
 		position ="inventory";
 		if(vsword>=1) {
-			mTArea.setText("Void Nature Glass Sword");
+			invText.append("Void Nature Glass Sword\n");
 		}else {
 			
 		}
 		if(dsword>=1) {
-			mTArea.setText("Dynian Sword");
+			invText.append("Dynian Sword\n");
 		}else {
 			
 		}
 		if(sword>=1) {
-			mTArea.setText("Steel Sword");
+			invText.append("Steel Sword\n");
 		}else {
 			
 		}
 		if(osword>=1) {
-			mTArea.setText("Old Sword");
+			invText.append("Old Sword\n");
 		}else {
 			
+		}
+		if(invText.length()==0) {
+			mTArea.setText("Inventory is empty");
+		}else {
+			if(hasAnyGrass()) {
+				invText.append("\nSelected Grass: ").append(getGrassName(selectedGrassIndex));
+			}
+			mTArea.setText(invText.toString().trim());
 		}
 		
 		
@@ -256,11 +376,127 @@ public class Game {
 		
 		
 		c1.setText("Go back");
-		c2.setText("");
-		c3.setText("");
-		c4.setText("");
+		if(ng>=1 || ngm>=1 || ngh>=1 || nghs>=1) {
+			c2.setText("Eat Grass");
+			c3.setText("<");
+			c4.setText(">");
+		}else {
+			c2.setText("");
+			c3.setText("");
+			c4.setText("");
+		}
 		
 	}	
+
+	public void eatGrass() {
+		position = "inventory";
+		ensureSelectedGrassAvailable();
+		int heal = 0;
+		String itemName = "";
+		if(selectedGrassIndex==3 && nghs>=1) {
+			int baseHP = pHP;
+			heal = baseHP;
+			pHP = pHP + heal;
+			nghs = 0;
+			itemName = "Absolute Nature Glass";
+		} else if(selectedGrassIndex==2 && ngh>=1) {
+			heal = 30;
+			pHP = pHP + heal;
+			ngh = 0;
+			itemName = "Super Rare Nature Glass";
+		} else if(selectedGrassIndex==1 && ngm>=1) {
+			heal = 15;
+			pHP = pHP + heal;
+			ngm = 0;
+			itemName = "Rare Nature Glass";
+		} else if(selectedGrassIndex==0 && ng>=1) {
+			heal = 5;
+			pHP = pHP + heal;
+			ng = 0;
+			itemName = "Nature Glass";
+		}
+
+		hNLabel.setText("" + pHP);
+		if(heal>0) {
+			mTArea.setText("You eat " + itemName + " and recover " + heal + " HP");
+		} else {
+			mTArea.setText("No grass item to eat");
+		}
+		ensureSelectedGrassAvailable();
+
+		c1.setText("Go back");
+		if(ng>=1 || ngm>=1 || ngh>=1 || nghs>=1) {
+			c2.setText("Eat Grass");
+			c3.setText("<");
+			c4.setText(">");
+		}else {
+			c2.setText("");
+			c3.setText("");
+			c4.setText("");
+		}
+	}
+
+	public boolean hasAnyGrass() {
+		return ng>=1 || ngm>=1 || ngh>=1 || nghs>=1;
+	}
+
+	public boolean hasGrassByIndex(int idx) {
+		if(idx==0) return ng>=1;
+		if(idx==1) return ngm>=1;
+		if(idx==2) return ngh>=1;
+		if(idx==3) return nghs>=1;
+		return false;
+	}
+
+	public String getGrassName(int idx) {
+		if(idx==0) return "Nature Glass";
+		if(idx==1) return "Rare Nature Glass";
+		if(idx==2) return "Super Rare Nature Glass";
+		if(idx==3) return "Absolute Nature Glass";
+		return "Nature Glass";
+	}
+
+	public void ensureSelectedGrassAvailable() {
+		if(!hasAnyGrass()) {
+			selectedGrassIndex = 0;
+			return;
+		}
+		if(hasGrassByIndex(selectedGrassIndex)) {
+			return;
+		}
+		for(int i=0;i<4;i++) {
+			if(hasGrassByIndex(i)) {
+				selectedGrassIndex = i;
+				break;
+			}
+		}
+	}
+
+	public void grassLeft() {
+		if(!hasAnyGrass()) {
+			return;
+		}
+		for(int i=0;i<4;i++) {
+			selectedGrassIndex = (selectedGrassIndex + 3) % 4;
+			if(hasGrassByIndex(selectedGrassIndex)) {
+				break;
+			}
+		}
+		inventory();
+	}
+
+	public void grassRight() {
+		if(!hasAnyGrass()) {
+			return;
+		}
+		for(int i=0;i<4;i++) {
+			selectedGrassIndex = (selectedGrassIndex + 1) % 4;
+			if(hasGrassByIndex(selectedGrassIndex)) {
+				break;
+			}
+		}
+		inventory();
+	}
 	
 	public void talkGuard(){
 		position ="talkGuard";//talk guard
@@ -409,8 +645,8 @@ public class Game {
 			
 		c1.setText("Go back");
 		c2.setText("Rest");
-		c3.setText("Inventory");
-		c4.setText("Crossroad");
+		c3.setText("Crossroad");
+		c4.setText("");
 		
 	}
 	public void status() {
@@ -449,26 +685,16 @@ public class Game {
 	public void attack() {
 		playerD=0;
 		position ="attack";
-		if (wNLabel.equals("Dynian Sword")) {
-			playerD=20;
-			playerD = new java.util.Random().nextInt(20);
-			
-		} else if(wNLabel.equals("Void Nature Glass Sword")) {
-			playerD=30;
-			playerD = new java.util.Random().nextInt(99);
-			
-		} else if(wNLabel.equals("Steel Sword")) {
-			playerD=10;
-			playerD = new java.util.Random().nextInt(10);
-			
-		} else if(wNLabel.equals("Old Sword")) {
-			playerD=3;
-			playerD = new java.util.Random().nextInt(5);
-			
+		if (Wp.equals("Dynian Sword")) {
+			playerD = 18 + new java.util.Random().nextInt(15);
+		} else if(Wp.equals("Void Nature Glass Sword")) {
+			playerD = 30 + new java.util.Random().nextInt(26);
+		} else if(Wp.equals("Steel Sword")) {
+			playerD = 10 + new java.util.Random().nextInt(9);
+		} else if(Wp.equals("Old Sword")) {
+			playerD = 6 + new java.util.Random().nextInt(7);
 		}else {
-			playerD=0;
-			playerD = new java.util.Random().nextInt(3);
-			
+			playerD = 2 + new java.util.Random().nextInt(5);
 		}
 		monHP = monHP-playerD;
 		mTArea.setText("You attack the Monster and dealt "+playerD+" Damage!\nMonster HP : "+monHP);
@@ -541,6 +767,51 @@ public class Game {
 			createGameScreen();
 			
 			
+		}
+	}
+	public class InventoryButtonHandler implements ActionListener{
+		public void actionPerformed(ActionEvent event) {
+			openInventoryShortcut();
+		}
+	}
+
+	public static class BagIcon implements Icon {
+		private final int size;
+		private final Color color;
+
+		public BagIcon(int size, Color color) {
+			this.size = size;
+			this.color = color;
+		}
+
+		@Override
+		public int getIconWidth() {
+			return size;
+		}
+
+		@Override
+		public int getIconHeight() {
+			return size;
+		}
+
+		@Override
+		public void paintIcon(java.awt.Component c, Graphics g, int x, int y) {
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setColor(color);
+			g2.setStroke(new BasicStroke(Math.max(2f, size / 16f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+			int bodyX = x + (int)(size * 0.18);
+			int bodyY = y + (int)(size * 0.28);
+			int bodyW = (int)(size * 0.64);
+			int bodyH = (int)(size * 0.62);
+
+			g2.drawRoundRect(bodyX, bodyY, bodyW, bodyH, (int)(size * 0.16), (int)(size * 0.16));
+			g2.drawArc(x + (int)(size * 0.33), y + (int)(size * 0.08), (int)(size * 0.34), (int)(size * 0.34), 0, 180);
+			g2.drawLine(x + (int)(size * 0.34), y + (int)(size * 0.38), x + (int)(size * 0.34), y + (int)(size * 0.74));
+			g2.drawLine(x + (int)(size * 0.66), y + (int)(size * 0.38), x + (int)(size * 0.66), y + (int)(size * 0.74));
+			g2.drawLine(x + (int)(size * 0.24), y + (int)(size * 0.56), x + (int)(size * 0.76), y + (int)(size * 0.56));
+			g2.dispose();
 		}
 	}
 	public class ChoiceHandler implements ActionListener{
@@ -777,17 +1048,21 @@ public class Game {
 			case "CHerb":
 				switch(yChoice) {
 				case "cho1": south(); break;
-				case "cho2": rest(); break; 
-				case "cho3": 
-					prevp ="CHerb";
-					inventory(); 
-					break;
+				case "cho2": 
+					prevp ="south";
+					rest(); 
+					break; 
+				case "cho3": crossRoad(); break;
+				case "cho4": break;
 				}
 		break;
 			case "sr":
 				switch(yChoice) {
 				case "cho1": CHerb(); break;
-				case "cho2": rest(); break; 
+				case "cho2": 
+					prevp ="south";
+					rest(); 
+					break; 
 				case "cho3": south(); break; 
 				case "cho4": crossRoad();break;
 				}
@@ -802,12 +1077,14 @@ public class Game {
 					south(); 
 				}else if(prevp.equals("setting")) {
 					setting();
+				}else if(prevp.equals("shortcutInventory")) {
+					restoreFromInventoryShortcut();
 				}
 				break;
 			
-			case "cho2": break; 
-			case "cho3": break;
-			case "cho4": break;
+			case "cho2": eatGrass(); break; 
+			case "cho3": grassLeft(); break;
+			case "cho4": grassRight(); break;
 			}
 			break;
 
