@@ -44,11 +44,12 @@ public class Game {
 	Font nFont = new Font("Times New Roman", Font.PLAIN, 30);//normal Font
 	Font sFont = new Font("Times New Roman", Font.PLAIN, 40);//start Font
 	AnimatedChoiceButton sButton;
-	AnimatedChoiceButton c1,c2,c3,c4,invButton;
+	AnimatedChoiceButton c1,c2,c3,c4,invButton,settingButton;
 	JTextArea mTArea;//main text area
 	TitleScreenHandler TSHandler = new TitleScreenHandler();
 	ChoiceHandler cHandler = new ChoiceHandler();
 	InventoryButtonHandler iHandler = new InventoryButtonHandler();
+	SettingButtonHandler setHandler = new SettingButtonHandler();
 	int pHP=15;//player HP
 	String Wp;//weapon
 	String position;
@@ -134,18 +135,24 @@ public class Game {
 
 		int mainW = (int)(winW * 0.76);
 		int mainX = (winW - mainW) / 2;
-		int titleY = (int)(winH * 0.16);
+		int titleY = (int)(winH * 0.18);
 		int titleH = (int)(winH * 0.26);
 		int mainY = (int)(winH * 0.18);
 		int mainH = (int)(winH * 0.40);
-		int choiceW = (int)(winW * 0.52);
-		int choiceH = (int)(winH * 0.34);
+		int choiceW = (int)(winW * 0.42);
+		int choiceH = (int)(winH * 0.27);
+		int cellSizeForLayout = Math.max(30, choiceH / 4);
+		int gapForLayout = Math.max(12, winW / 80);
+		int maxChoiceW = winW - cellSizeForLayout - gapForLayout - 80;
+		if(choiceW > maxChoiceW) {
+			choiceW = maxChoiceW;
+		}
 		int choiceX = (winW - choiceW) / 2;
-		int choiceY = (int)(winH * 0.58);
-		int startW = (int)(winW * 0.24);
-		int startH = (int)(winH * 0.18);
+		int choiceY = (int)(winH * 0.64);
+		int startW = (int)(winW * 0.168);
+		int startH = (int)(winH * 0.126);
 		int startX = (winW - startW) / 2;
-		int startY = (int)(winH * 0.71);
+		int startY = (int)(winH * 0.74);
 		int playerY = (int)(winH * 0.03);
 		int playerH = (int)(winH * 0.09);
 
@@ -157,7 +164,7 @@ public class Game {
 
 		int dynamicNormal = Math.max(16, Math.min(36, winW / 32));
 		int dynamicTitle = Math.max(40, Math.min(120, winW / 11));
-		int dynamicStart = Math.max(20, Math.min(54, winW / 18));
+		int dynamicStart = Math.max(16, (int)(Math.max(20, Math.min(54, winW / 18)) * 0.8));
 		nFont = new Font("Times New Roman", Font.PLAIN, dynamicNormal);
 		tFont = new Font("Times New Roman", Font.PLAIN, dynamicTitle);
 		sFont = new Font("Times New Roman", Font.PLAIN, dynamicStart);
@@ -174,14 +181,26 @@ public class Game {
 		if(sButton!=null) sButton.setFont(sFont);
 
 		if(invButton!=null && cBPanel!=null) {
-			int cellSize = Math.max(30, choiceH / 4);
-			int gap = Math.max(12, winW / 80);
+			int cellSize = cellSizeForLayout;
+			int gap = gapForLayout;
 			int invX = choiceX + choiceW + gap;
 			if(invX + cellSize > winW - 20) {
 				invX = winW - cellSize - 20;
 			}
 			invButton.setBounds(invX, choiceY, cellSize, cellSize);
 			updateInventoryButtonIcon(cellSize);
+		}
+
+		if(settingButton!=null && pPanel!=null) {
+			int setSize = Math.max(24, playerH - 6);
+			int setGap = Math.max(10, winW / 120);
+			int setX = mainX - setSize - setGap;
+			if(setX < 8) {
+				setX = 8;
+			}
+			int setY = playerY + (playerH - setSize) / 2;
+			settingButton.setBounds(setX, setY, setSize, setSize);
+			updateSettingButtonIcon(setSize);
 		}
 
 		con.revalidate();
@@ -264,6 +283,18 @@ public class Game {
 		con.add(invButton);
 		invButton.setVisible(true);
 		invButton.setEnabled(true);
+
+		settingButton = new AnimatedChoiceButton();
+		settingButton.setBackground(Color.black);
+		settingButton.setForeground(Color.white);
+		settingButton.setFont(nFont);
+		settingButton.setFocusPainted(false);
+		settingButton.setBorderPainted(false);
+		settingButton.setContentAreaFilled(false);
+		settingButton.addActionListener(setHandler);
+		con.add(settingButton);
+		settingButton.setVisible(true);
+		settingButton.setEnabled(true);
 		
 		pPanel = new JPanel();
 		pPanel.setBounds(120,18,720,60);
@@ -308,6 +339,12 @@ public class Game {
 		int iconSize = Math.max(18, buttonSize - 8);
 		invButton.setIcon(new BagIcon(iconSize, Color.white));
 		invButton.setText("");
+	}
+
+	public void updateSettingButtonIcon(int buttonSize) {
+		int iconSize = Math.max(16, buttonSize - 8);
+		settingButton.setIcon(new GearIcon(iconSize, Color.white));
+		settingButton.setText("");
 	}
 
 	public void openInventoryShortcut() {
@@ -356,7 +393,7 @@ public class Game {
 		c1.setText("Talk to the Guard");
 		c2.setText("Attack the Guard");
 		c3.setText("Leave");
-		c4.setText("Setting");
+		c4.setText("");
 		
 	}	
 	public void setting() {//townGate
@@ -533,7 +570,7 @@ public class Game {
 				break;
 			}
 		}
-		inventory();
+		updateInventorySelectionOnly();
 	}
 
 	public void grassRight() {
@@ -546,7 +583,23 @@ public class Game {
 				break;
 			}
 		}
-		inventory();
+		updateInventorySelectionOnly();
+	}
+
+	public void updateInventorySelectionOnly() {
+		String currentText = mTArea.getText();
+		String selectedLine = "Selected Grass: " + getGrassName(selectedGrassIndex);
+		String updatedText;
+		if(currentText.contains("Selected Grass:")) {
+			updatedText = currentText.replaceAll("Selected Grass:.*", selectedLine);
+		} else {
+			updatedText = currentText + "\n\n" + selectedLine;
+		}
+		if(mTArea instanceof TypewriterTextArea) {
+			((TypewriterTextArea)mTArea).setImmediateText(updatedText);
+		}else {
+			mTArea.setText(updatedText);
+		}
 	}
 	
 	public void talkGuard(){
@@ -555,7 +608,7 @@ public class Game {
 		c1.setText("How to enter Town?");
 		c2.setText("Go back");
 		c3.setText("Crossroad");
-		c4.setText("Setting");
+		c4.setText("");
 		
 		
 	}
@@ -575,10 +628,17 @@ public class Game {
 	public void how(){
 		position ="how";//talk guard
 		mTArea.setText("Guard : You need to kill monster on\n west and collect the Silver Ring");
-		c1.setText(">");
+		c1.setText("I have the Silver Ring");
 		c2.setText("Go back");
 		c3.setText("Crossroad");
-		c4.setText("Setting");
+		c4.setText("");
+		if(sRing==1) {
+			c1.setEnabled(true);
+			c1.setButtonColors(new Color(18, 18, 18), Color.white, new Color(220, 220, 220));
+		}else {
+			c1.setEnabled(false);
+			c1.setButtonColors(new Color(18, 18, 18, 128), new Color(255, 255, 255, 128), new Color(220, 220, 220, 128));
+		}
 		
 		
 	}
@@ -644,6 +704,24 @@ public class Game {
 		c3.setText("Rest");
 		c4.setText("Go back");
 		
+	}
+
+	public void southLookAround() {
+		position = "southLAround";
+		mTArea.setText("You look around in the South.\n\nCollect Herb chance:\n"
+				+ "Absolute Nature Glass: 2%\n"
+				+ "Super Rare Nature Glass: 28%\n"
+				+ "Rare Nature Glass: 20%\n"
+				+ "Nature Glass: 50%\n\n"
+				+ "Search random item chance:\n"
+				+ "Void Nature Glass Sword: 2%\n"
+				+ "Dynian Sword: 28%\n"
+				+ "Steel Sword: 20%\n"
+				+ "Old Sword: 50%");
+		c1.setText("Collect Herb");
+		c2.setText("Search random item (?)");
+		c3.setText("Rest");
+		c4.setText("Go back");
 	}
 	public void sr() {
 		position ="sr";//talk guard
@@ -792,6 +870,8 @@ public class Game {
 		c4.setVisible(false);
 		invButton.setEnabled(false);
 		invButton.setVisible(false);
+		settingButton.setEnabled(false);
+		settingButton.setVisible(false);
 		
 	}
 	public void win() {
@@ -809,6 +889,8 @@ public class Game {
 		c4.setVisible(false);
 		invButton.setEnabled(false);
 		invButton.setVisible(false);
+		settingButton.setEnabled(false);
+		settingButton.setVisible(false);
 		
 	}
 		
@@ -827,6 +909,13 @@ public class Game {
 	public class InventoryButtonHandler implements ActionListener{
 		public void actionPerformed(ActionEvent event) {
 			openInventoryShortcut();
+		}
+	}
+	public class SettingButtonHandler implements ActionListener{
+		public void actionPerformed(ActionEvent event) {
+			if(position!=null && !position.equals("end") && !position.equals("death")) {
+				setting();
+			}
 		}
 	}
 
@@ -866,6 +955,48 @@ public class Game {
 			g2.drawLine(x + (int)(size * 0.34), y + (int)(size * 0.38), x + (int)(size * 0.34), y + (int)(size * 0.74));
 			g2.drawLine(x + (int)(size * 0.66), y + (int)(size * 0.38), x + (int)(size * 0.66), y + (int)(size * 0.74));
 			g2.drawLine(x + (int)(size * 0.24), y + (int)(size * 0.56), x + (int)(size * 0.76), y + (int)(size * 0.56));
+			g2.dispose();
+		}
+	}
+
+	public static class GearIcon implements Icon {
+		private final int size;
+		private final Color color;
+
+		public GearIcon(int size, Color color) {
+			this.size = size;
+			this.color = color;
+		}
+
+		@Override
+		public int getIconWidth() {
+			return size;
+		}
+
+		@Override
+		public int getIconHeight() {
+			return size;
+		}
+
+		@Override
+		public void paintIcon(java.awt.Component c, Graphics g, int x, int y) {
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setColor(color);
+			g2.setStroke(new BasicStroke(Math.max(2f, size / 16f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			int center = size / 2;
+			int coreR = Math.max(3, size / 7);
+			int ringR = Math.max(6, size / 3);
+			int toothW = Math.max(2, size / 8);
+			int toothH = Math.max(3, size / 7);
+
+			g2.translate(x + center, y + center);
+			for(int i=0;i<8;i++) {
+				g2.rotate(Math.PI / 4.0);
+				g2.drawRoundRect(-toothW / 2, -ringR - toothH, toothW, toothH, 2, 2);
+			}
+			g2.drawOval(-ringR, -ringR, ringR * 2, ringR * 2);
+			g2.drawOval(-coreR, -coreR, coreR * 2, coreR * 2);
 			g2.dispose();
 		}
 	}
@@ -1005,6 +1136,10 @@ public class Game {
 		public void actionPerformed(ActionEvent event) {
 			
 			String yChoice = event.getActionCommand();
+			if(c1!=null) {
+				c1.setEnabled(true);
+				c1.setButtonColors(new Color(18, 18, 18), Color.white, new Color(220, 220, 220));
+			}
 			
 			
 			switch(position) {
@@ -1013,7 +1148,7 @@ public class Game {
 				case "cho1": talkGuard(); break;
 				case "cho2": attg();break; 
 				case "cho3": crossRoad();break;
-				case "cho4": setting(); break;
+				case "cho4": break;
 				}
 				break;
 			case "talkGuard":
@@ -1021,7 +1156,7 @@ public class Game {
 				case "cho1": how(); break;
 				case "cho2": tg(); break; 
 				case "cho3": crossRoad();break;
-				case "cho4":setting();break;
+				case "cho4":break;
 				}
 				break;
 			case "fight":
@@ -1090,13 +1225,11 @@ public class Game {
 					
 					if(sRing==1) {
 						end();
-					}else {
-						how(); 
 					}
 				break;
 				case "cho2": talkGuard(); break; 
 				case "cho3": crossRoad();break;
-				case "cho4":setting();break;
+				case "cho4":break;
 				}
 				break;
 			case "setting":
@@ -1195,11 +1328,23 @@ public class Game {
 						north();
 					}
 					else if(prevp.equals("south")) {
-						south();
+						southLookAround();
 					}
 				break; 
 				case "cho3": break;
 				case "cho4": break;
+				}
+				break;
+
+			case "southLAround":
+				switch(yChoice) {
+				case "cho1": CHerb(); break;
+				case "cho2": sr(); break;
+				case "cho3": 
+					prevp ="south";
+					rest();
+					break;
+				case "cho4": crossRoad(); break;
 				}
 				break;
 
