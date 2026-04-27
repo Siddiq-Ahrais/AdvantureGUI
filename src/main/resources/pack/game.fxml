@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="pack.GameController"
+            fx:id="rootPane"
+            style="-fx-background-color: #000000;">
+
+    <!-- TOP: Player HUD + Monster HUD -->
+    <top>
+        <VBox spacing="4">
+            <!-- Player HUD row -->
+            <HBox id="playerHUD" alignment="CENTER_LEFT" spacing="15">
+                <padding><Insets top="10" right="20" bottom="5" left="20"/></padding>
+                <Button fx:id="settingButton" id="settingButton" styleClass="icon-button"
+                        text="⚙" style="-fx-font-size: 24; -fx-text-fill: white;"
+                        onAction="#onSettingClicked"/>
+                <Label styleClass="hud-label" text="HP : "/>
+                <Label fx:id="hpLabel" styleClass="hud-value" text="15"/>
+                <Label styleClass="hud-label" text=" / "/>
+                <Label fx:id="maxHpLabel" styleClass="hud-value" text="15"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label styleClass="hud-label" text="Weapon : "/>
+                <Label fx:id="weaponLabel" styleClass="hud-value" text="Knife"/>
+            </HBox>
+
+            <!-- Monster HUD row (hidden by default) -->
+            <HBox fx:id="monsterHUD" id="monsterHUD" alignment="CENTER_LEFT" spacing="10"
+                  visible="false" managed="false">
+                <padding><Insets top="2" right="20" bottom="2" left="20"/></padding>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="monsterName" id="monsterName" text="Monster"/>
+                <ProgressBar fx:id="monsterHPBar" id="monsterHPBar" progress="1.0"
+                             prefWidth="120" prefHeight="18"/>
+                <Label fx:id="monsterHPText" id="monsterHPText" text="25 / 25"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <!-- CENTER: Main text area -->
+    <center>
+        <TextArea fx:id="mainTextArea" id="mainTextArea" editable="false"
+                  wrapText="true">
+            <BorderPane.margin><Insets top="10" right="40" bottom="10" left="40"/></BorderPane.margin>
+        </TextArea>
+    </center>
+
+    <!-- BOTTOM: Choice buttons + inventory button -->
+    <bottom>
+        <HBox alignment="CENTER" spacing="12">
+            <padding><Insets top="10" right="40" bottom="20" left="40"/></padding>
+
+            <VBox fx:id="choiceBox" spacing="8" alignment="CENTER">
+                <Button fx:id="c1" styleClass="choice-button" text="" onAction="#onChoice1"/>
+                <Button fx:id="c2" styleClass="choice-button" text="" onAction="#onChoice2"/>
+                <Button fx:id="c3" styleClass="choice-button" text="" onAction="#onChoice3"/>
+                <Button fx:id="c4" styleClass="choice-button" text="" onAction="#onChoice4"/>
+            </VBox>
+
+            <VBox alignment="TOP_CENTER" spacing="4">
+                <Button fx:id="invButton" id="invButton" styleClass="icon-button"
+                        text="🎒" style="-fx-font-size: 22;"
+                        onAction="#onInventoryClicked"/>
+            </VBox>
+        </HBox>
+    </bottom>
+
+</BorderPane>
