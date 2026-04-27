@@ -1,40 +1,29 @@
 package pack;
 
-import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.GridLayout;
-import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.geom.AffineTransform;
-import java.util.Scanner;
-import javax.swing.Icon;
-import javax.swing.JButton;
+
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
-import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 
 public class Game {
-	playersetup PS = new playersetup();
-//	choice cc = new choice();
 	
 	
 	
 	JFrame gwindow;
 	Container con;
-	JPanel tNPanel, sBPanel, mTPanel, cBPanel, pPanel;
+	JPanel tNPanel, mTPanel, cBPanel, pPanel;
 	//tNPanel(title Name Panel), sBPanel(Start button Panel) 
 	//mTPanel(main Text Panel), cBPanel(choice Button Panel), pPanel(player Panel)
 	JLabel tNLabel, hLabel,hNLabel,wLabel, wNLabel, resLabel;
@@ -53,8 +42,7 @@ public class Game {
 	int pHP=15;//player HP
 	String Wp;//weapon
 	String position;
-	Scanner scan = new Scanner(System.in);
-	String enter;
+
 	String prevp = "";
 	String inventoryReturnPosition = "";
 	String inventoryReturnText = "";
@@ -80,6 +68,7 @@ public class Game {
 		
 		gwindow = new JFrame();
 		gwindow.setSize(1000, 680);
+		gwindow.setMinimumSize(new Dimension(800, 500));
 		gwindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		gwindow.getContentPane().setBackground(Color.black);
 		gwindow.setLayout(null);
@@ -92,10 +81,6 @@ public class Game {
 		tNLabel.setForeground(Color.white);
 		tNLabel.setFont(tFont);
 		
-		sBPanel = new JPanel();
-		sBPanel.setBounds(360,480,240,120);
-		sBPanel.setBackground(Color.black);
-		
 		sButton = new AnimatedChoiceButton();
 		sButton.setText("START");
 		sButton.setBackground(Color.white);
@@ -106,9 +91,8 @@ public class Game {
 		sButton.setFocusPainted(false);
 		
 		tNPanel.add(tNLabel);
-		sBPanel.add(sButton);
+		con.add(sButton);
 		con.add(tNPanel);
-		con.add(sBPanel);
 
 		gwindow.addComponentListener(new ComponentAdapter() {
 			@Override
@@ -157,14 +141,14 @@ public class Game {
 		int playerH = (int)(winH * 0.09);
 
 		if(tNPanel!=null) tNPanel.setBounds(mainX, titleY, mainW, titleH);
-		if(sBPanel!=null) sBPanel.setBounds(startX, startY, startW, startH);
+		if(sButton!=null && sButton.getParent()==con) sButton.setBounds(startX, startY, startW, startH);
 		if(mTPanel!=null) mTPanel.setBounds(mainX, mainY, mainW, mainH);
 		if(cBPanel!=null) cBPanel.setBounds(choiceX, choiceY, choiceW, choiceH);
 		if(pPanel!=null) pPanel.setBounds(mainX, playerY, mainW, playerH);
 
 		int dynamicNormal = Math.max(16, Math.min(36, winW / 32));
 		int dynamicTitle = Math.max(40, Math.min(120, winW / 11));
-		int dynamicStart = Math.max(16, (int)(Math.max(20, Math.min(54, winW / 18)) * 0.8));
+		int dynamicStart = Math.max(14, Math.min(startH * 2 / 3, Math.min(startW / 5, winW / 22)));
 		nFont = new Font("Times New Roman", Font.PLAIN, dynamicNormal);
 		tFont = new Font("Times New Roman", Font.PLAIN, dynamicTitle);
 		sFont = new Font("Times New Roman", Font.PLAIN, dynamicStart);
@@ -215,7 +199,7 @@ public class Game {
 	public void createGameScreen() {
 		
 		tNPanel.setVisible(false);
-		sBPanel.setVisible(false);
+		sButton.setVisible(false);
 		
 		mTPanel = new JPanel();
 		mTPanel.setBounds(120,120,720,300);
@@ -349,8 +333,14 @@ public class Game {
 			return;
 		}
 		if("death".equals(position) || "end".equals(position)) {
-			button.setVisible(false);
-			button.setEnabled(false);
+			if(button==c1) {
+				button.setVisible(true);
+				button.setEnabled(true);
+				button.setButtonColors(new Color(18, 18, 18), Color.white, new Color(220, 220, 220));
+			}else {
+				button.setVisible(false);
+				button.setEnabled(false);
+			}
 			return;
 		}
 
@@ -749,7 +739,7 @@ public class Game {
 		position ="drink";//talk guard
 		pHP=pHP+5;
 		hNLabel.setText("" + pHP);
-		mTArea.setText("You drink River Water and feel refreshed!\n\nHP + 6");
+		mTArea.setText("You drink River Water and feel refreshed!\n\nHP + 5");
 		
 		
 		c1.setText("Go back to Crossroad");
@@ -925,7 +915,10 @@ public class Game {
 	public void death() {
 		position ="death";
 		mTArea.setText("Your HP 0\nYou Dead\n\n- GAME OVER -");
-		c1.setVisible(false);
+		c1.setText("Play Again");
+		c1.setVisible(true);
+		c1.setEnabled(true);
+		c1.setButtonColors(new Color(18, 18, 18), Color.white, new Color(220, 220, 220));
 		c2.setVisible(false);
 		c3.setVisible(false);
 		c4.setVisible(false);
@@ -939,12 +932,19 @@ public class Game {
 		position ="win";
 		mTArea.setText("You killed the Monster an obtain a Magic Tool\n Silver Ring");
 		sRing=1;
+		c1.setText(">");
+		c2.setText("");
+		c3.setText("");
+		c4.setText("");
 	}
 	public void end() {
 		position ="end";
 		mTArea.setText("Eh? You already have Silver Ring?\nYou can go in to the town Advanture.\n\n- THE END -");
 		
-		c1.setVisible(false);
+		c1.setText("Play Again");
+		c1.setVisible(true);
+		c1.setEnabled(true);
+		c1.setButtonColors(new Color(18, 18, 18), Color.white, new Color(220, 220, 220));
 		c2.setVisible(false);
 		c3.setVisible(false);
 		c4.setVisible(false);
@@ -953,6 +953,44 @@ public class Game {
 		settingButton.setEnabled(false);
 		settingButton.setVisible(false);
 		
+	}
+	public void restartGame() {
+		pHP = 15;
+		monHP = 25;
+		Wp = "Knife";
+		playerD = 0;
+		monD = 0;
+		ng = 0;
+		ngm = 0;
+		ngh = 0;
+		nghs = 0;
+		vsword = 0;
+		osword = 0;
+		sword = 0;
+		dsword = 0;
+		sRing = 0;
+		selectedGrassIndex = 0;
+		prevp = "";
+		inventoryReturnPosition = "";
+		inventoryReturnText = "";
+		inventoryReturnC1 = "";
+		inventoryReturnC2 = "";
+		inventoryReturnC3 = "";
+		inventoryReturnC4 = "";
+		
+		c1.setVisible(true);
+		c2.setVisible(true);
+		c3.setVisible(true);
+		c4.setVisible(true);
+		invButton.setEnabled(true);
+		invButton.setVisible(true);
+		settingButton.setEnabled(true);
+		settingButton.setVisible(true);
+		
+		setWeaponLabel();
+		hNLabel.setText("" + pHP);
+		tg();
+		playChoicePopup();
 	}
 		
 	
@@ -981,219 +1019,7 @@ public class Game {
 		}
 	}
 
-	public static class BagIcon implements Icon {
-		private final int size;
-		private final Color color;
 
-		public BagIcon(int size, Color color) {
-			this.size = size;
-			this.color = color;
-		}
-
-		@Override
-		public int getIconWidth() {
-			return size;
-		}
-
-		@Override
-		public int getIconHeight() {
-			return size;
-		}
-
-		@Override
-		public void paintIcon(java.awt.Component c, Graphics g, int x, int y) {
-			Graphics2D g2 = (Graphics2D) g.create();
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			g2.setColor(color);
-			g2.setStroke(new BasicStroke(Math.max(2f, size / 16f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-
-			int bodyX = x + (int)(size * 0.18);
-			int bodyY = y + (int)(size * 0.28);
-			int bodyW = (int)(size * 0.64);
-			int bodyH = (int)(size * 0.62);
-
-			g2.drawRoundRect(bodyX, bodyY, bodyW, bodyH, (int)(size * 0.16), (int)(size * 0.16));
-			g2.drawArc(x + (int)(size * 0.33), y + (int)(size * 0.08), (int)(size * 0.34), (int)(size * 0.34), 0, 180);
-			g2.drawLine(x + (int)(size * 0.34), y + (int)(size * 0.38), x + (int)(size * 0.34), y + (int)(size * 0.74));
-			g2.drawLine(x + (int)(size * 0.66), y + (int)(size * 0.38), x + (int)(size * 0.66), y + (int)(size * 0.74));
-			g2.drawLine(x + (int)(size * 0.24), y + (int)(size * 0.56), x + (int)(size * 0.76), y + (int)(size * 0.56));
-			g2.dispose();
-		}
-	}
-
-	public static class GearIcon implements Icon {
-		private final int size;
-		private final Color color;
-
-		public GearIcon(int size, Color color) {
-			this.size = size;
-			this.color = color;
-		}
-
-		@Override
-		public int getIconWidth() {
-			return size;
-		}
-
-		@Override
-		public int getIconHeight() {
-			return size;
-		}
-
-		@Override
-		public void paintIcon(java.awt.Component c, Graphics g, int x, int y) {
-			Graphics2D g2 = (Graphics2D) g.create();
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			g2.setColor(color);
-			g2.setStroke(new BasicStroke(Math.max(2f, size / 16f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-			int center = size / 2;
-			int coreR = Math.max(3, size / 7);
-			int ringR = Math.max(6, size / 3);
-			int toothW = Math.max(2, size / 8);
-			int toothH = Math.max(3, size / 7);
-
-			g2.translate(x + center, y + center);
-			for(int i=0;i<8;i++) {
-				g2.rotate(Math.PI / 4.0);
-				g2.drawRoundRect(-toothW / 2, -ringR - toothH, toothW, toothH, 2, 2);
-			}
-			g2.drawOval(-ringR, -ringR, ringR * 2, ringR * 2);
-			g2.drawOval(-coreR, -coreR, coreR * 2, coreR * 2);
-			g2.dispose();
-		}
-	}
-
-	public static class AnimatedChoiceButton extends JButton {
-		private float scale = 1.0f;
-		private Timer animTimer;
-		private Color fillColor = new Color(18, 18, 18);
-		private Color hoverFillColor = new Color(36, 36, 36);
-		private Color borderColor = new Color(220, 220, 220);
-
-		public AnimatedChoiceButton() {
-			setOpaque(false);
-			setFocusPainted(false);
-			setBorderPainted(false);
-			setContentAreaFilled(false);
-			setForeground(Color.white);
-			setBackground(Color.black);
-			setRolloverEnabled(true);
-
-			addMouseListener(new MouseAdapter() {
-				@Override
-				public void mouseEntered(MouseEvent e) {
-					animateTo(1.04f, 90);
-				}
-
-				@Override
-				public void mouseExited(MouseEvent e) {
-					animateTo(1.0f, 100);
-				}
-			});
-		}
-
-		public void playPopup() {
-			scale = 0.86f;
-			repaint();
-			animateTo(1.0f, 120);
-		}
-
-		public void setButtonColors(Color fill, Color text, Color border) {
-			fillColor = fill;
-			hoverFillColor = fill.brighter();
-			borderColor = border;
-			setForeground(text);
-			repaint();
-		}
-
-		private void animateTo(float target, int durationMs) {
-			if(animTimer!=null && animTimer.isRunning()) {
-				animTimer.stop();
-			}
-			final int frames = 8;
-			final float start = scale;
-			final float delta = target - start;
-			animTimer = new Timer(Math.max(10, durationMs / frames), null);
-			animTimer.addActionListener(new ActionListener() {
-				int step = 0;
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					step++;
-					float t = step / (float) frames;
-					scale = start + (delta * t);
-					repaint();
-					if(step>=frames) {
-						scale = target;
-						animTimer.stop();
-					}
-				}
-			});
-			animTimer.start();
-		}
-
-		@Override
-		protected void paintComponent(Graphics g) {
-			Graphics2D g2 = (Graphics2D) g.create();
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-			int w = getWidth();
-			int h = getHeight();
-			AffineTransform old = g2.getTransform();
-			g2.translate(w * (1f - scale) / 2f, h * (1f - scale) / 2f);
-			g2.scale(scale, scale);
-
-			Color base = getModel().isRollover() ? hoverFillColor : fillColor;
-			g2.setColor(base);
-			g2.fillRoundRect(1, 1, w - 3, h - 3, h - 2, h - 2);
-			g2.setColor(borderColor);
-			g2.setStroke(new BasicStroke(2f));
-			g2.drawRoundRect(1, 1, w - 3, h - 3, h - 2, h - 2);
-
-			super.paintComponent(g2);
-			g2.setTransform(old);
-			g2.dispose();
-		}
-	}
-
-	public static class TypewriterTextArea extends JTextArea {
-		private Timer typeTimer;
-
-		@Override
-		public void setText(String text) {
-			if(typeTimer!=null && typeTimer.isRunning()) {
-				typeTimer.stop();
-			}
-			final String full = (text==null) ? "" : text;
-			super.setText("");
-			if(full.isEmpty()) {
-				return;
-			}
-			final int[] i = new int[] {0};
-			typeTimer = new Timer(9, null);
-			typeTimer.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					i[0]++;
-					superSet(full.substring(0, Math.min(i[0], full.length())));
-					if(i[0] >= full.length()) {
-						typeTimer.stop();
-					}
-				}
-			});
-			typeTimer.start();
-		}
-
-		public void setImmediateText(String text) {
-			if(typeTimer!=null && typeTimer.isRunning()) {
-				typeTimer.stop();
-			}
-			super.setText(text==null ? "" : text);
-		}
-
-		private void superSet(String text) {
-			super.setText(text);
-		}
-	}
 	public class ChoiceHandler implements ActionListener{
 		public void actionPerformed(ActionEvent event) {
 			
@@ -1261,6 +1087,7 @@ public class Game {
 				case "cho3": break;
 				case "cho4": break;
 				}
+				break;
 			case "monatt":
 				switch(yChoice) {
 				case "cho1": 
@@ -1480,6 +1307,16 @@ public class Game {
 			case "cho4": grassRight(); break;
 			}
 			break;
+
+			case "death":
+			case "end":
+				switch(yChoice) {
+				case "cho1": restartGame(); break;
+				case "cho2": break;
+				case "cho3": break;
+				case "cho4": break;
+				}
+				break;
 
 			}
 			playChoicePopup();
