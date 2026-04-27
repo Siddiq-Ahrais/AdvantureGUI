@@ -494,45 +494,29 @@ public class Game {
 		ensureSelectedGrassAvailable();
 		StringBuilder invText = new StringBuilder();
 		if(ng>=1) {
-			invText.append("Nature Glass Lower-Grade\n");
-		}else {
-			
+			invText.append("Nature Glass Lower-Grade x" + ng + "\n");
 		}
 		if(ngm>=1) {
-			invText.append("Nature Glass Medium-Grade\n");
-		}else {
-			
+			invText.append("Nature Glass Medium-Grade x" + ngm + "\n");
 		}
 		if(ngh>=1) {
-			invText.append("Super Rare Nature Glass High-Grade\n");
-		}else {
-			
+			invText.append("Super Rare Nature Glass High-Grade x" + ngh + "\n");
 		}
 		if(nghs>=1) {
-			invText.append("Absolute Nature Glass Highest-Grade\n");
-		}else {
-			
+			invText.append("Absolute Nature Glass Highest-Grade x" + nghs + "\n");
 		}
 		position ="inventory";
 		if(vsword>=1) {
 			invText.append("Void Nature Glass Sword\n");
-		}else {
-			
 		}
 		if(dsword>=1) {
 			invText.append("Dynian Sword\n");
-		}else {
-			
 		}
 		if(sword>=1) {
 			invText.append("Steel Sword\n");
-		}else {
-			
 		}
 		if(osword>=1) {
 			invText.append("Old Sword\n");
-		}else {
-			
 		}
 		if(invText.length()==0) {
 			mTArea.setText("Inventory is empty");
@@ -569,22 +553,22 @@ public class Game {
 			int baseHP = pHP;
 			heal = baseHP;
 			pHP = Math.min(pHP + heal, maxHP);
-			nghs = 0;
+			nghs--;
 			itemName = "Absolute Nature Glass";
 		} else if(selectedGrassIndex==2 && ngh>=1) {
 			heal = 30;
 			pHP = Math.min(pHP + heal, maxHP);
-			ngh = 0;
+			ngh--;
 			itemName = "Super Rare Nature Glass";
 		} else if(selectedGrassIndex==1 && ngm>=1) {
 			heal = 15;
 			pHP = Math.min(pHP + heal, maxHP);
-			ngm = 0;
+			ngm--;
 			itemName = "Rare Nature Glass";
 		} else if(selectedGrassIndex==0 && ng>=1) {
 			heal = 5;
 			pHP = Math.min(pHP + heal, maxHP);
-			ng = 0;
+			ng--;
 			itemName = "Nature Glass";
 		}
 
@@ -853,16 +837,16 @@ public class Game {
 		
 		double chan = Math.random();
 		if(chan<0.02) {
-			nghs = 1;
+			nghs++;
 			mTArea.setText("You collect a Absolute Nature Glass Highest Grade");
 		}else if(chan<0.3) {
-			ngh =1;
+			ngh++;
 			mTArea.setText("You collect a Super Rare Nature Glass High-Grade");
 		}else if(chan<0.5) {
-			ngm=1;
+			ngm++;
 			mTArea.setText("You collect a Rare Nature Glass Medium-Grade");
 		}else{
-			ng=1;
+			ng++;
 			mTArea.setText("You collect a Nature Glass Low-Grade");
 		}
 		
