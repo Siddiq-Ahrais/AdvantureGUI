@@ -5,6 +5,8 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -57,6 +59,7 @@ public class Game {
 	int nghs;//nature glass
 	int vsword,osword,sword,dsword,sRing;
 	int monHP=25;
+	boolean isFullscreen = false;
 	
 	
 	
@@ -448,14 +451,35 @@ public class Game {
 		c4.setText("");
 		
 	}	
-	public void setting() {//townGate
+	public void setting() {
 		position ="setting";
 		mTArea.setText("MENU");
 		c1.setText("Status");
-		c2.setText("Go back");
-		c3.setText("");
+		c2.setText(isFullscreen ? "Windowed" : "Fullscreen");
+		c3.setText("Go back");
 		c4.setText("");
 		
+	}
+	public void toggleFullscreen() {
+		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+		if(!isFullscreen) {
+			gwindow.dispose();
+			gwindow.setUndecorated(true);
+			gwindow.setVisible(true);
+			gwindow.setExtendedState(JFrame.MAXIMIZED_BOTH);
+			isFullscreen = true;
+		} else {
+			gwindow.dispose();
+			gwindow.setUndecorated(false);
+			gwindow.setExtendedState(JFrame.NORMAL);
+			gwindow.setSize(1000, 680);
+			gwindow.setLocationRelativeTo(null);
+			gwindow.setVisible(true);
+			isFullscreen = false;
+		}
+		updateLayout();
+		setting();
+		playChoicePopup();
 	}
 	public void inventory() {//townGate
 		position ="inventory";
@@ -1120,9 +1144,9 @@ public class Game {
 			case "setting":
 				switch(yChoice) {
 				case "cho1": status(); break;
-				case "cho2": tg();break;
-				case "cho3": break;
-				case "cho4":;break;
+				case "cho2": toggleFullscreen(); break;
+				case "cho3": tg();break;
+				case "cho4": break;
 				}
 				break;
 
