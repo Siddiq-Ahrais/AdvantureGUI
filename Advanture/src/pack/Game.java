@@ -42,8 +42,11 @@ public class Game {
 	InventoryButtonHandler iHandler = new InventoryButtonHandler();
 	SettingButtonHandler setHandler = new SettingButtonHandler();
 	int pHP=15;//player HP
+	int maxHP=15;//max HP
 	String Wp;//weapon
 	String position;
+	int wpDurability=0;//current weapon durability
+	int wpMaxDurability=0;//max durability for current weapon
 
 	String prevp = "";
 	String inventoryReturnPosition = "";
@@ -53,12 +56,14 @@ public class Game {
 	String inventoryReturnC3 = "";
 	String inventoryReturnC4 = "";
 	int selectedGrassIndex = 0;
-	int playerD,monD,ng;//absolute nature glass
-	int ngm;//super rare nature glass
-	int ngh;//rare nature glass
-	int nghs;//nature glass
+	int playerD,monD,ng;//nature glass
+	int ngm;//rare nature glass
+	int ngh;//super rare nature glass
+	int nghs;//absolute nature glass
 	int vsword,osword,sword,dsword,sRing;
 	int monHP=25;
+	String monName="Monster";//current enemy name
+	int monMaxDmg=8;//current enemy max damage
 	boolean isFullscreen = false;
 	
 	
@@ -440,6 +445,9 @@ public class Game {
 		} else if(Wp.equals("Old Sword")) {
 			showName = "Old Sword";
 		}
+		if(wpMaxDurability > 0) {
+			showName += " (" + wpDurability + "/" + wpMaxDurability + ")";
+		}
 		wNLabel.setText(showName);
 	}
 	public void tg() {//townGate
@@ -560,22 +568,22 @@ public class Game {
 		if(selectedGrassIndex==3 && nghs>=1) {
 			int baseHP = pHP;
 			heal = baseHP;
-			pHP = pHP + heal;
+			pHP = Math.min(pHP + heal, maxHP);
 			nghs = 0;
 			itemName = "Absolute Nature Glass";
 		} else if(selectedGrassIndex==2 && ngh>=1) {
 			heal = 30;
-			pHP = pHP + heal;
+			pHP = Math.min(pHP + heal, maxHP);
 			ngh = 0;
 			itemName = "Super Rare Nature Glass";
 		} else if(selectedGrassIndex==1 && ngm>=1) {
 			heal = 15;
-			pHP = pHP + heal;
+			pHP = Math.min(pHP + heal, maxHP);
 			ngm = 0;
 			itemName = "Rare Nature Glass";
 		} else if(selectedGrassIndex==0 && ng>=1) {
 			heal = 5;
-			pHP = pHP + heal;
+			pHP = Math.min(pHP + heal, maxHP);
 			ng = 0;
 			itemName = "Nature Glass";
 		}
@@ -703,7 +711,7 @@ public class Game {
 	}
 	public void how(){
 		position ="how";//talk guard
-		mTArea.setText("Guard : You need to kill monster on\n west and collect the Silver Ring");
+		mTArea.setText("Guard : You need to kill the Orc on\n the East and collect the Silver Ring");
 		c1.setText("I have the Silver Ring");
 		c2.setText("Go back");
 		c3.setText("Crossroad");
@@ -747,7 +755,7 @@ public class Game {
 	}
 	public void rest() {
 		position ="rest";//talk guard
-		pHP=pHP+2;
+		pHP = Math.min(pHP + 2, maxHP);
 		hNLabel.setText("" + pHP);
 		mTArea.setText("You sit and take a little break!\n\nHP + 2");
 		
@@ -761,7 +769,7 @@ public class Game {
 	
 	public void drink() {
 		position ="drink";//talk guard
-		pHP=pHP+5;
+		pHP = Math.min(pHP + 5, maxHP);
 		hNLabel.setText("" + pHP);
 		mTArea.setText("You drink River Water and feel refreshed!\n\nHP + 5");
 		
@@ -773,15 +781,26 @@ public class Game {
 		
 	}
 	public void south() {
-		position ="south";//talk guard
+		position ="south";
 		mTArea.setText("You are at the South\n South is place for some Advanture \nCollecting Herb \n");
 		c1.setText("Collect Herb");
 		c2.setText("Search random item (?)");
-		c3.setText("Rest");
+		c3.setText("Train (+Max HP)");
 		c4.setText("Go back");
 		
 	}
-
+	public void trainMaxHP() {
+		position ="trainHP";
+		int gain = 3 + new java.util.Random().nextInt(5);
+		maxHP += gain;
+		pHP = maxHP;
+		hNLabel.setText("" + pHP);
+		mTArea.setText("You train hard and push your limits!\n\nMax HP + " + gain + "\nMax HP is now " + maxHP + "\nHP restored to " + pHP);
+		c1.setText("Go back");
+		c2.setText("Crossroad");
+		c3.setText("");
+		c4.setText("");
+	}
 	public void southLookAround() {
 		position = "southLAround";
 		mTArea.setText("You look around in the South.\n\n"
@@ -792,32 +811,36 @@ public class Game {
 				+ "Nature: 50%                Old Sword: 50%");
 		c1.setText("Collect Herb");
 		c2.setText("Search random item (?)");
-		c3.setText("Rest");
+		c3.setText("Train (+Max HP)");
 		c4.setText("Go back");
 	}
 	public void sr() {
-		position ="sr";//talk guard
+		position ="sr";
 		double chan = Math.random();
 		if(chan<0.02) {
 			vsword = 1;
-			mTArea.setText("You get a Void Nature Glass Sword");
 			Wp="Void Nature Glass Sword";
+			wpDurability=50; wpMaxDurability=50;
+			mTArea.setText("You get a Void Nature Glass Sword! (Durability: 50)");
 			setWeaponLabel();
 		}else if(chan<0.3) {
 			dsword =1;
 			Wp="Dynian Sword";
+			wpDurability=20; wpMaxDurability=20;
 			setWeaponLabel();
-			mTArea.setText("You get a Dynian Sword");
+			mTArea.setText("You get a Dynian Sword! (Durability: 20)");
 		}else if(chan<0.5) {
 			sword=1;
-			mTArea.setText("You get a Steel Sword");
 			Wp="Steel Sword";
+			wpDurability=15; wpMaxDurability=15;
 			setWeaponLabel();
+			mTArea.setText("You get a Steel Sword! (Durability: 15)");
 		}else{
 			osword=1;
-			mTArea.setText("You get a Old Sword");
 			Wp="Old Sword";
+			wpDurability=10; wpMaxDurability=10;
 			setWeaponLabel();
+			mTArea.setText("You get a Old Sword! (Durability: 10)");
 		}
 		c1.setText("Collect Herb");
 		c2.setText("Rest");
@@ -852,7 +875,12 @@ public class Game {
 	}
 	public void status() {
 		position ="status";
-		mTArea.setText("");
+		String durText = wpMaxDurability > 0 ? wpDurability + "/" + wpMaxDurability : "N/A";
+		mTArea.setText("=== STATUS ===\n"
+			+ "HP: " + pHP + " / " + maxHP + "\n"
+			+ "Weapon: " + Wp + "\n"
+			+ "Durability: " + durText + "\n"
+			+ "Silver Ring: " + (sRing==1 ? "Yes" : "No"));
 		c1.setText("Go back");
 		c2.setText("");
 		c3.setText("");
@@ -862,9 +890,11 @@ public class Game {
 	public void fight() {
 		if(monHP<1) {
 			monHP = 25;
+			monName = "Monster";
+			monMaxDmg = 8;
 		}
 		position ="fight";
-		mTArea.setText("You choose to fight\nMonster HP: "+monHP);
+		mTArea.setText("You choose to fight the " + monName + "\n" + monName + " HP: "+monHP);
 		
 		c1.setText("Attack");
 		c2.setText("Defend");
@@ -876,9 +906,10 @@ public class Game {
 		position ="defend";
 		playerD=0;
 		monD=0;
-		monD = new java.util.Random().nextInt(3);
+		monD = new java.util.Random().nextInt(Math.max(1, monMaxDmg / 3));
 		pHP=pHP-monD;
-		mTArea.setText("You choose to defend the Monster attack\nDefend UP 1 Turn\nMonster attack You and dealt "+monD+" Damage!");
+		hNLabel.setText(""+pHP);
+		mTArea.setText("You choose to defend the " + monName + " attack\nDefend UP 1 Turn\n" + monName + " attack You and dealt "+monD+" Damage!");
 		c1.setText(">");
 		c2.setText("");
 		c3.setText("");
@@ -900,8 +931,20 @@ public class Game {
 		}else {
 			playerD = 2 + new java.util.Random().nextInt(5);
 		}
+		// Weapon durability
+		String breakMsg = "";
+		if(wpMaxDurability > 0) {
+			wpDurability--;
+			if(wpDurability <= 0) {
+				breakMsg = "\n\nYour " + Wp + " broke!";
+				Wp = "Knife";
+				wpDurability = 0;
+				wpMaxDurability = 0;
+			}
+			setWeaponLabel();
+		}
 		monHP = monHP-playerD;
-		mTArea.setText("You attack the Monster and dealt "+playerD+" Damage!\nMonster HP : "+monHP);
+		mTArea.setText("You attack the " + monName + " and dealt "+playerD+" Damage!\n" + monName + " HP : "+monHP + breakMsg);
 		
 		c1.setText(">");
 		c2.setText("");
@@ -912,9 +955,9 @@ public class Game {
 	public void monatt() {
 		position ="monatt";
 		monD=0;
-		monD = new java.util.Random().nextInt(8);
+		monD = new java.util.Random().nextInt(Math.max(1, monMaxDmg));
 		pHP=pHP-monD;
-		mTArea.setText("Monster attack You and dealt "+monD+" Damage!\n"+"Monster HP : "+monHP);
+		mTArea.setText(monName + " attack You and dealt "+monD+" Damage!\n" + monName + " HP : "+monHP);
 		hNLabel.setText(""+pHP);
 		if(pHP<=0) {
 			death();
@@ -923,12 +966,27 @@ public class Game {
 		c2.setText("");
 		c3.setText("");
 		c4.setText("");
-		
-	}
+		}
+	
 	
 	public void east() {
-		position ="east";//talk guard
-		mTArea.setText("You are at the East. \nThere is a Monster near You.");
+		position ="east";
+		// Random enemy encounter
+		double roll = Math.random();
+		if(roll < 0.10) {
+			monName = "Orc";
+			monHP = 50;
+			monMaxDmg = 14;
+		} else if(roll < 0.40) {
+			monName = "Goblin";
+			monHP = 30;
+			monMaxDmg = 9;
+		} else {
+			monName = "Slime";
+			monHP = 15;
+			monMaxDmg = 5;
+		}
+		mTArea.setText("You are at the East.\nA " + monName + " appears! (HP: " + monHP + ")");
 		c1.setText("Fight");
 		c2.setText("Rest");
 		c3.setText("Run");
@@ -954,8 +1012,23 @@ public class Game {
 	}
 	public void win() {
 		position ="win";
-		mTArea.setText("You killed the Monster an obtain a Magic Tool\n Silver Ring");
-		sRing=1;
+		String dropMsg = "You killed the " + monName + "!";
+		if(monName.equals("Orc")) {
+			sRing=1;
+			dropMsg += "\nYou obtain a Magic Tool: Silver Ring";
+		} else if(monName.equals("Goblin")) {
+			int hpGain = 3;
+			maxHP += hpGain;
+			pHP += hpGain;
+			hNLabel.setText(""+pHP);
+			dropMsg += "\nGoblin dropped a Vitality Stone! Max HP +" + hpGain;
+		} else {
+			int heal = 5;
+			pHP = Math.min(pHP + heal, maxHP);
+			hNLabel.setText(""+pHP);
+			dropMsg += "\nSlime dropped Slime Gel! HP +" + heal;
+		}
+		mTArea.setText(dropMsg);
 		c1.setText(">");
 		c2.setText("");
 		c3.setText("");
@@ -980,8 +1053,13 @@ public class Game {
 	}
 	public void restartGame() {
 		pHP = 15;
+		maxHP = 15;
 		monHP = 25;
+		monName = "Monster";
+		monMaxDmg = 8;
 		Wp = "Knife";
+		wpDurability = 0;
+		wpMaxDurability = 0;
 		playerD = 0;
 		monD = 0;
 		ng = 0;
@@ -1186,9 +1264,7 @@ public class Game {
 				switch(yChoice) {
 				case "cho1": CHerb(); break;
 				case "cho2": sr();break; 
-				case "cho3": rest();
-				prevp="south";
-				break;
+				case "cho3": trainMaxHP(); break;
 				case "cho4": crossRoad();break;
 				}
 				break;
@@ -1249,11 +1325,17 @@ public class Game {
 				switch(yChoice) {
 				case "cho1": CHerb(); break;
 				case "cho2": sr(); break;
-				case "cho3": 
-					prevp ="south";
-					rest();
-					break;
+				case "cho3": trainMaxHP(); break;
 				case "cho4": crossRoad(); break;
+				}
+				break;
+
+			case "trainHP":
+				switch(yChoice) {
+				case "cho1": south(); break;
+				case "cho2": crossRoad(); break;
+				case "cho3": break;
+				case "cho4": break;
 				}
 				break;
 
