@@ -17,6 +17,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
+import javax.swing.JProgressBar;
 import javax.swing.border.EmptyBorder;
 
 public class Game {
@@ -25,9 +26,10 @@ public class Game {
 	
 	JFrame gwindow;
 	Container con;
-	JPanel tNPanel, mTPanel, cBPanel, pPanel;
-	//tNPanel(title Name Panel), sBPanel(Start button Panel) 
+	JPanel tNPanel, mTPanel, cBPanel, pPanel, monPanel;
+	//tNPanel(title Name Panel)
 	//mTPanel(main Text Panel), cBPanel(choice Button Panel), pPanel(player Panel)
+	//monPanel(monster HUD Panel)
 	JLabel tNLabel, hLabel,hNLabel,wLabel, wNLabel, resLabel;
 	//tNLabel(title name Label), hLabel(HP Label),hNLabel(HP Name Label),wLabel(Weapon Label )
 	//wNLabel(Weapon Number Label), resLabel()
@@ -37,6 +39,8 @@ public class Game {
 	AnimatedChoiceButton sButton;
 	AnimatedChoiceButton c1,c2,c3,c4,invButton,settingButton;
 	JTextArea mTArea;//main text area
+	JLabel monNameLabel, monHPLabel;
+	JProgressBar monHPBar;
 	TitleScreenHandler TSHandler = new TitleScreenHandler();
 	ChoiceHandler cHandler = new ChoiceHandler();
 	InventoryButtonHandler iHandler = new InventoryButtonHandler();
@@ -154,6 +158,26 @@ public class Game {
 		if(cBPanel!=null) cBPanel.setBounds(choiceX, choiceY, choiceW, choiceH);
 		if(pPanel!=null) pPanel.setBounds(mainX, playerY, mainW, playerH);
 
+		// Monster HUD layout - positioned below player panel, right-aligned
+		if(monPanel!=null) {
+			int monW = Math.min((int)(winW * 0.35), 340);
+			int monH = (int)(winH * 0.07);
+			int monX = winW - monW - mainX;
+			int monY = playerY + playerH + 4;
+			monPanel.setBounds(monX, monY, monW, monH);
+			int nameW = monW / 3;
+			int barW = monW - nameW - 8;
+			if(monNameLabel!=null) {
+				monNameLabel.setBounds(4, 0, nameW, monH);
+			}
+			if(monHPBar!=null) {
+				monHPBar.setBounds(nameW + 4, monH / 4, barW * 2 / 3, monH / 2);
+			}
+			if(monHPLabel!=null) {
+				monHPLabel.setBounds(nameW + 4 + barW * 2 / 3 + 4, 0, barW / 3, monH);
+			}
+		}
+
 		int dynamicNormal = Math.max(16, Math.min(36, winW / 32));
 		int dynamicTitle = Math.max(40, Math.min(120, winW / 11));
 		int dynamicStart = Math.max(14, Math.min(startH * 2 / 3, Math.min(startW / 5, winW / 22)));
@@ -202,6 +226,22 @@ public class Game {
 
 		con.revalidate();
 		con.repaint();
+	}
+
+	public void updateMonsterHUD() {
+		boolean inCombat = position != null && 
+			(position.equals("fight") || position.equals("attack") || 
+			 position.equals("defend") || position.equals("monatt"));
+		if(monPanel != null) {
+			monPanel.setVisible(inCombat);
+			if(inCombat) {
+				monNameLabel.setText(monName);
+				int maxMon = monName.equals("Orc") ? 50 : monName.equals("Goblin") ? 30 : 15;
+				monHPBar.setMaximum(maxMon);
+				monHPBar.setValue(Math.max(0, monHP));
+				monHPLabel.setText(Math.max(0, monHP) + " / " + maxMon);
+			}
+		}
 	}
 
 	public void createGameScreen() {
@@ -317,6 +357,32 @@ public class Game {
 		wNLabel.setFont(nFont);
 		wNLabel.setForeground(Color.white);
 		pPanel.add(wNLabel);
+
+		// Monster HUD
+		monPanel = new JPanel();
+		monPanel.setBounds(120, 130, 360, 50);
+		monPanel.setBackground(new Color(20, 20, 20, 200));
+		monPanel.setLayout(null);
+		monPanel.setVisible(false);
+		con.add(monPanel);
+
+		monNameLabel = new JLabel("Monster");
+		monNameLabel.setFont(nFont);
+		monNameLabel.setForeground(new Color(255, 80, 80));
+		monPanel.add(monNameLabel);
+
+		monHPBar = new JProgressBar(0, 100);
+		monHPBar.setValue(100);
+		monHPBar.setStringPainted(false);
+		monHPBar.setBackground(new Color(60, 20, 20));
+		monHPBar.setForeground(new Color(220, 50, 50));
+		monHPBar.setBorderPainted(false);
+		monPanel.add(monHPBar);
+
+		monHPLabel = new JLabel("");
+		monHPLabel.setFont(nFont);
+		monHPLabel.setForeground(Color.white);
+		monPanel.add(monHPLabel);
 
 		updateLayout();
 		playChoicePopup();
@@ -574,6 +640,7 @@ public class Game {
 
 		hNLabel.setText("" + pHP);
 		if(heal>0) {
+			SoundManager.playGulp();
 			mTArea.setText("You eat " + itemName + " and recover " + heal + " HP");
 		} else {
 			mTArea.setText("No grass item to eat");
@@ -755,6 +822,7 @@ public class Game {
 		position ="drink";//talk guard
 		pHP = Math.min(pHP + 5, maxHP);
 		hNLabel.setText("" + pHP);
+		SoundManager.playGulp();
 		mTArea.setText("You drink River Water and feel refreshed!\n\nHP + 5");
 		
 		
@@ -879,6 +947,7 @@ public class Game {
 		}
 		position ="fight";
 		mTArea.setText("You choose to fight the " + monName + "\n" + monName + " HP: "+monHP);
+		updateMonsterHUD();
 		
 		c1.setText("Attack");
 		c2.setText("Defend");
@@ -893,7 +962,9 @@ public class Game {
 		monD = new java.util.Random().nextInt(Math.max(1, monMaxDmg / 3));
 		pHP=pHP-monD;
 		hNLabel.setText(""+pHP);
+		SoundManager.playHit();
 		mTArea.setText("You choose to defend the " + monName + " attack\nDefend UP 1 Turn\n" + monName + " attack You and dealt "+monD+" Damage!");
+		updateMonsterHUD();
 		c1.setText(">");
 		c2.setText("");
 		c3.setText("");
@@ -904,6 +975,7 @@ public class Game {
 	public void attack() {
 		playerD=0;
 		position ="attack";
+		SoundManager.playSlash();
 		if (Wp.equals("Dynian Sword")) {
 			playerD = 18 + new java.util.Random().nextInt(15);
 		} else if(Wp.equals("Void Nature Glass Sword")) {
@@ -929,6 +1001,7 @@ public class Game {
 		}
 		monHP = monHP-playerD;
 		mTArea.setText("You attack the " + monName + " and dealt "+playerD+" Damage!\n" + monName + " HP : "+monHP + breakMsg);
+		updateMonsterHUD();
 		
 		c1.setText(">");
 		c2.setText("");
@@ -941,8 +1014,10 @@ public class Game {
 		monD=0;
 		monD = new java.util.Random().nextInt(Math.max(1, monMaxDmg));
 		pHP=pHP-monD;
+		SoundManager.playHit();
 		mTArea.setText(monName + " attack You and dealt "+monD+" Damage!\n" + monName + " HP : "+monHP);
 		hNLabel.setText(""+pHP);
+		updateMonsterHUD();
 		if(pHP<=0) {
 			death();
 		}
@@ -980,6 +1055,8 @@ public class Game {
 
 	public void death() {
 		position ="death";
+		SoundManager.playHit();
+		updateMonsterHUD();
 		mTArea.setText("Your HP 0\nYou Dead\n\n- GAME OVER -");
 		c1.setText("Play Again");
 		c1.setVisible(true);
@@ -996,6 +1073,8 @@ public class Game {
 	}
 	public void win() {
 		position ="win";
+		SoundManager.playVictory();
+		updateMonsterHUD();
 		String dropMsg = "You killed the " + monName + "!";
 		if(monName.equals("Orc")) {
 			sRing=1;
@@ -1110,6 +1189,7 @@ public class Game {
 		public void actionPerformed(ActionEvent event) {
 			
 			String yChoice = event.getActionCommand();
+			SoundManager.playClick();
 			
 			
 			switch(position) {
