@@ -59,6 +59,12 @@ public class Game {
 	String inventoryReturnC2 = "";
 	String inventoryReturnC3 = "";
 	String inventoryReturnC4 = "";
+	String settingReturnPosition = "";
+	String settingReturnText = "";
+	String settingReturnC1 = "";
+	String settingReturnC2 = "";
+	String settingReturnC3 = "";
+	String settingReturnC4 = "";
 	int selectedGrassIndex = 0;
 	int playerD,monD,ng;//nature glass
 	int ngm;//rare nature glass
@@ -69,6 +75,9 @@ public class Game {
 	String monName="Monster";//current enemy name
 	int monMaxDmg=8;//current enemy max damage
 	boolean isFullscreen = false;
+		int vertigoStacks = 0;
+	int slipperyStacks = 0;
+	int slipperyActionCount = 0;
 	
 	
 	
@@ -461,6 +470,9 @@ public class Game {
 		if(position==null || position.equals("inventory")) {
 			return;
 		}
+		if(!position.equals("setting") && !position.equals("status")) {
+			advanceSlipperyOnAction();
+		}
 
 		inventoryReturnPosition = position;
 		inventoryReturnText = mTArea.getText();
@@ -471,6 +483,20 @@ public class Game {
 		prevp = "shortcutInventory";
 		inventory();
 		playChoicePopup();
+	}
+
+	public void advanceSlipperyOnAction() {
+		if(slipperyStacks <= 0) {
+			return;
+		}
+		slipperyActionCount++;
+		if(slipperyActionCount >= 3) {
+			slipperyActionCount -= 3;
+			slipperyStacks = Math.max(0, slipperyStacks - 1);
+			if(slipperyStacks == 0) {
+				slipperyActionCount = 0;
+			}
+		}
 	}
 
 	public void restoreFromInventoryShortcut() {
@@ -533,6 +559,23 @@ public class Game {
 		c3.setText("Go back");
 		c4.setText("");
 		
+	}
+	public void restoreFromSettingShortcut() {
+		if(settingReturnPosition.equals("")) {
+			setting();
+			return;
+		}
+		position = settingReturnPosition;
+		if(mTArea instanceof TypewriterTextArea) {
+			((TypewriterTextArea)mTArea).setImmediateText(settingReturnText);
+		} else {
+			mTArea.setText(settingReturnText);
+		}
+		c1.setText(settingReturnC1);
+		c2.setText(settingReturnC2);
+		c3.setText(settingReturnC3);
+		c4.setText(settingReturnC4);
+		settingReturnPosition = "";
 	}
 	public void toggleFullscreen() {
 		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
@@ -788,7 +831,7 @@ public class Game {
 	}
 	public void north() {
 		position ="north";//talk guard
-		mTArea.setText("You are in the North\n There is a river near you");
+		mTArea.setText("You are in the North\n There is a clean river near you.\nYou can see the riverbed clearly.");
 		c1.setText("Drink it");
 		c2.setText("Let's not");
 		c3.setText("Rest");
@@ -799,7 +842,7 @@ public class Game {
 		position ="LAround";//talk guard
 		mTArea.setText("You are in the North\n There is a river you left before");
 		c1.setText("Drink it");
-		c2.setText("Let's not");
+		c2.setText("Crossroad");
 		c3.setText("Rest");
 		c4.setText("");
 		
@@ -820,10 +863,38 @@ public class Game {
 	
 	public void drink() {
 		position ="drink";//talk guard
-		pHP = Math.min(pHP + 5, maxHP);
+		StringBuilder effectText = new StringBuilder();
+		int baseHeal = 5;
+		pHP = Math.min(pHP + baseHeal, maxHP);
+		effectText.append("You drink River Water and feel refreshed!\n\nHP + ").append(baseHeal);
+
+		double roll = Math.random();
+		if(roll < 0.2) {
+			int bonus = 3;
+			pHP = Math.min(pHP + bonus, maxHP);
+			effectText.append("\nLucky stream: HP + ").append(bonus);
+		} else if(roll < 0.4) {
+			int upset = Math.max(1, (int)Math.floor(pHP * 0.1));
+			pHP = Math.max(1, pHP - upset);
+			effectText.append("\nStomach ache: HP - ").append(upset);
+		}
+
+		if(Math.random() < 0.3) {
+			vertigoStacks++;
+			effectText.append("\nVertigo stack +1 (now ").append(vertigoStacks).append(")");
+			if(vertigoStacks >= 3) {
+				int vomitLoss = Math.max(1, (int)Math.floor(pHP * 0.4));
+				pHP = Math.max(1, pHP - vomitLoss);
+				vertigoStacks = 0;
+				effectText.append("\nYou throw up! HP - ").append(vomitLoss).append(" (vertigo reset)");
+			}
+		} else {
+			effectText.append("\nThe water feels clean.");
+		}
+
 		hNLabel.setText("" + pHP);
 		SoundManager.playGulp();
-		mTArea.setText("You drink River Water and feel refreshed!\n\nHP + 5");
+		mTArea.setText(effectText.toString());
 		
 		
 		c1.setText("Go back to Crossroad");
@@ -928,11 +999,16 @@ public class Game {
 	public void status() {
 		position ="status";
 		String durText = wpMaxDurability > 0 ? wpDurability + "/" + wpMaxDurability : "N/A";
-		mTArea.setText("=== STATUS ===\n"
-			+ "HP: " + pHP + " / " + maxHP + "\n"
-			+ "Weapon: " + Wp + "\n"
-			+ "Durability: " + durText + "\n"
-			+ "Silver Ring: " + (sRing==1 ? "Yes" : "No"));
+		StringBuilder statusText = new StringBuilder();
+		statusText.append("=== STATUS ===\n")
+			.append("HP: ").append(pHP).append(" / ").append(maxHP).append("\n")
+			.append("Weapon: ").append(Wp).append("\n")
+			.append("Durability: ").append(durText).append("\n")
+			.append("Silver Ring: ").append(sRing==1 ? "Yes" : "No");
+		if(vertigoStacks > 0) {
+			statusText.append("\nVertigo: ").append(vertigoStacks).append(" stack(s)");
+		}
+		mTArea.setText(statusText.toString());
 		c1.setText("Go back");
 		c2.setText("");
 		c3.setText("");
@@ -963,7 +1039,16 @@ public class Game {
 		pHP=pHP-monD;
 		hNLabel.setText(""+pHP);
 		SoundManager.playHit();
-		mTArea.setText("You choose to defend the " + monName + " attack\nDefend UP 1 Turn\n" + monName + " attack You and dealt "+monD+" Damage!");
+		StringBuilder defendText = new StringBuilder();
+		defendText.append("You choose to defend the ").append(monName).append(" attack\nDefend UP 1 Turn\n")
+			.append(monName).append(" attack You and dealt ").append(monD).append(" Damage!");
+		if(monName.equals("Slime") && monD > 0 && Math.random() < 0.7) {
+			if(slipperyStacks < 5) {
+				slipperyStacks++;
+			}
+			defendText.append("\nYou feel slippery! (Slippery stack: ").append(slipperyStacks).append(")");
+		}
+		mTArea.setText(defendText.toString());
 		updateMonsterHUD();
 		c1.setText(">");
 		c2.setText("");
@@ -999,8 +1084,24 @@ public class Game {
 			}
 			setWeaponLabel();
 		}
-		monHP = monHP-playerD;
-		mTArea.setText("You attack the " + monName + " and dealt "+playerD+" Damage!\n" + monName + " HP : "+monHP + breakMsg);
+		double missChance = Math.min(1.0, slipperyStacks * 0.2);
+		boolean missed = Math.random() < missChance;
+		int dealtDamage = missed ? 0 : playerD;
+		monHP = monHP - dealtDamage;
+		StringBuilder attackText = new StringBuilder();
+		if(missed) {
+			attackText.append("You swing at the ").append(monName).append(" but miss due to slippery hands!\n");
+		} else {
+			attackText.append("You attack the ").append(monName).append(" and dealt ").append(dealtDamage).append(" Damage!\n");
+		}
+		if(!missed && monName.equals("Slime") && Math.random() < 0.04) {
+			if(slipperyStacks < 5) {
+				slipperyStacks++;
+			}
+			attackText.append("You feel slippery! (Slippery stack: ").append(slipperyStacks).append(")\n");
+		}
+		attackText.append(monName).append(" HP : ").append(monHP).append(breakMsg);
+		mTArea.setText(attackText.toString());
 		updateMonsterHUD();
 		
 		c1.setText(">");
@@ -1015,7 +1116,16 @@ public class Game {
 		monD = new java.util.Random().nextInt(Math.max(1, monMaxDmg));
 		pHP=pHP-monD;
 		SoundManager.playHit();
-		mTArea.setText(monName + " attack You and dealt "+monD+" Damage!\n" + monName + " HP : "+monHP);
+		StringBuilder monText = new StringBuilder();
+		monText.append(monName).append(" attack You and dealt ").append(monD).append(" Damage!\n")
+			.append(monName).append(" HP : ").append(monHP);
+		if(monName.equals("Slime") && monD > 0 && Math.random() < 0.7) {
+			if(slipperyStacks < 5) {
+				slipperyStacks++;
+			}
+			monText.append("\nYou feel slippery! (Slippery stack: ").append(slipperyStacks).append(")");
+		}
+		mTArea.setText(monText.toString());
 		hNLabel.setText(""+pHP);
 		updateMonsterHUD();
 		if(pHP<=0) {
@@ -1056,12 +1166,19 @@ public class Game {
 	public void death() {
 		position ="death";
 		SoundManager.playHit();
-		updateMonsterHUD();
-		mTArea.setText("Your HP 0\nYou Dead\n\n- GAME OVER -");
-		c1.setText("Play Again");
-		c1.setVisible(true);
-		c1.setEnabled(true);
-		c1.setButtonColors(new Color(18, 18, 18), Color.white, new Color(220, 220, 220));
+		StringBuilder statusText = new StringBuilder();
+		statusText.append("=== STATUS ===\n")
+			.append("HP: ").append(pHP).append(" / ").append(maxHP).append("\n")
+			.append("Weapon: ").append(Wp).append("\n")
+			.append("Durability: ").append(durText).append("\n")
+			.append("Silver Ring: ").append(sRing==1 ? "Yes" : "No");
+		if(vertigoStacks > 0) {
+			statusText.append("\nVertigo: ").append(vertigoStacks).append(" stack(s)");
+		}
+		if(slipperyStacks > 0) {
+			statusText.append("\nSlippery: ").append(slipperyStacks).append(" stack(s)");
+		}
+		mTArea.setText(statusText.toString());
 		c2.setVisible(false);
 		c3.setVisible(false);
 		c4.setVisible(false);
@@ -1134,6 +1251,9 @@ public class Game {
 		sword = 0;
 		dsword = 0;
 		sRing = 0;
+		vertigoStacks = 0;
+		slipperyStacks = 0;
+		slipperyActionCount = 0;
 		selectedGrassIndex = 0;
 		prevp = "";
 		inventoryReturnPosition = "";
@@ -1177,10 +1297,19 @@ public class Game {
 	}
 	public class SettingButtonHandler implements ActionListener{
 		public void actionPerformed(ActionEvent event) {
-			if(position!=null && !position.equals("end") && !position.equals("death")) {
-				setting();
-				playChoicePopup();
+			if(position==null || position.equals("end") || position.equals("death")) {
+				return;
 			}
+			if(!position.equals("setting") && !position.equals("status")) {
+				settingReturnPosition = position;
+				settingReturnText = mTArea.getText();
+				settingReturnC1 = c1.getText();
+				settingReturnC2 = c2.getText();
+				settingReturnC3 = c3.getText();
+				settingReturnC4 = c4.getText();
+			}
+			setting();
+			playChoicePopup();
 		}
 	}
 
@@ -1190,6 +1319,9 @@ public class Game {
 			
 			String yChoice = event.getActionCommand();
 			SoundManager.playClick();
+			if(!position.equals("setting") && !position.equals("status")) {
+				advanceSlipperyOnAction();
+			}
 			
 			
 			switch(position) {
@@ -1287,7 +1419,7 @@ public class Game {
 				switch(yChoice) {
 				case "cho1": status(); break;
 				case "cho2": toggleFullscreen(); break;
-				case "cho3": tg();break;
+				case "cho3": restoreFromSettingShortcut();break;
 				case "cho4": break;
 				}
 				break;
@@ -1406,7 +1538,7 @@ public class Game {
 			case "LAround":
 				switch(yChoice) {
 				case "cho1": drink(); break;
-				case "cho2": north();break; 
+				case "cho2": crossRoad();break; 
 				case "cho3": rest();break;
 				case "cho4": break;
 				}

@@ -37,6 +37,9 @@ public class GameController {
     private int monMaxDmg = 8;
     private boolean isFullscreen = false;
     private int selectedGrassIndex = 0;
+    private int vertigoStacks = 0;
+    private int slipperyStacks = 0;
+    private int slipperyActionCount = 0;
 
     // Inventory shortcut state
     private String inventoryReturnPosition = "";
@@ -79,6 +82,20 @@ public class GameController {
         }
     }
 
+    private void advanceSlipperyOnAction() {
+        if (slipperyStacks <= 0) {
+            return;
+        }
+        slipperyActionCount++;
+        if (slipperyActionCount >= 3) {
+            slipperyActionCount -= 3;
+            slipperyStacks = Math.max(0, slipperyStacks - 1);
+            if (slipperyStacks == 0) {
+                slipperyActionCount = 0;
+            }
+        }
+    }
+
     private void setChoices(String t1, String t2, String t3, String t4) {
         setButton(c1, t1);
         setButton(c2, t2);
@@ -112,6 +129,9 @@ public class GameController {
     @FXML
     private void onInventoryClicked() {
         if (position.isEmpty() || position.equals("inventory")) return;
+        if (!position.equals("setting") && !position.equals("status")) {
+            advanceSlipperyOnAction();
+        }
         inventoryReturnPosition = position;
         inventoryReturnText = mainTextArea.getText();
         inventoryReturnChoices = new String[]{c1.getText(), c2.getText(), c3.getText(), c4.getText()};
@@ -121,16 +141,22 @@ public class GameController {
 
     @FXML
     private void onSettingClicked() {
-        if (!position.equals("end") && !position.equals("death") && !position.equals("setting") && !position.equals("status")) {
+        if (position.equals("end") || position.equals("death")) {
+            return;
+        }
+        if (!position.equals("setting") && !position.equals("status")) {
             settingReturnPosition = position;
             settingReturnText = mainTextArea.getText();
             settingReturnChoices = new String[]{c1.getText(), c2.getText(), c3.getText(), c4.getText()};
-            setting();
         }
+        setting();
     }
 
     private void handleChoice(String choice) {
         SoundManager.playClick();
+        if (!position.equals("setting") && !position.equals("status")) {
+            advanceSlipperyOnAction();
+        }
         switch (position) {
             case "tg":
                 switch (choice) {
@@ -353,14 +379,14 @@ public class GameController {
 
     private void north() {
         position = "north";
-        mainTextArea.setText("You are in the North\n There is a river near you");
+        mainTextArea.setText("You are in the North\n There is a clean river near you.\nYou can see the riverbed clearly.");
         setChoices("Drink it", "Let's not", "Rest", "Stay");
     }
 
     private void lAround() {
         position = "LAround";
         mainTextArea.setText("You are in the North\n There is a river you left before");
-        setChoices("Drink it", "Let's not", "Rest", "");
+        setChoices("Drink it", "Crossroad", "Rest", "");
     }
 
     private void rest() {
@@ -373,10 +399,38 @@ public class GameController {
 
     private void drink() {
         position = "drink";
-        pHP = Math.min(pHP + 5, maxHP);
+        StringBuilder effectText = new StringBuilder();
+        int baseHeal = 5;
+        pHP = Math.min(pHP + baseHeal, maxHP);
+        effectText.append("You drink River Water and feel refreshed!\n\nHP + ").append(baseHeal);
+
+        double roll = Math.random();
+        if (roll < 0.2) {
+            int bonus = 3;
+            pHP = Math.min(pHP + bonus, maxHP);
+            effectText.append("\nLucky stream: HP + ").append(bonus);
+        } else if (roll < 0.4) {
+            int upset = Math.max(1, (int)Math.floor(pHP * 0.1));
+            pHP = Math.max(1, pHP - upset);
+            effectText.append("\nStomach ache: HP - ").append(upset);
+        }
+
+        if (Math.random() < 0.3) {
+            vertigoStacks++;
+            effectText.append("\nVertigo stack +1 (now ").append(vertigoStacks).append(")");
+            if (vertigoStacks >= 3) {
+                int vomitLoss = Math.max(1, (int)Math.floor(pHP * 0.4));
+                pHP = Math.max(1, pHP - vomitLoss);
+                vertigoStacks = 0;
+                effectText.append("\nYou throw up! HP - ").append(vomitLoss).append(" (vertigo reset)");
+            }
+        } else {
+            effectText.append("\nThe water feels clean.");
+        }
+
         updateHUD();
         SoundManager.playGulp();
-        mainTextArea.setText("You drink River Water and feel refreshed!\n\nHP + 5");
+        mainTextArea.setText(effectText.toString());
         setChoices("Go back to Crossroad", "Rest", "", "");
     }
 
@@ -473,9 +527,25 @@ public class GameController {
                 Wp = "Knife"; wpDurability = 0; wpMaxDurability = 0;
             }
         }
-        monHP -= playerD;
+        double missChance = Math.min(1.0, slipperyStacks * 0.2);
+        boolean missed = Math.random() < missChance;
+        int dealtDamage = missed ? 0 : playerD;
+        monHP -= dealtDamage;
         updateHUD();
-        mainTextArea.setText("You attack the " + monNameStr + " and dealt " + playerD + " Damage!\n" + monNameStr + " HP : " + monHP + breakMsg);
+        StringBuilder attackText = new StringBuilder();
+        if (missed) {
+            attackText.append("You swing at the ").append(monNameStr).append(" but miss due to slippery hands!\n");
+        } else {
+            attackText.append("You attack the ").append(monNameStr).append(" and dealt ").append(dealtDamage).append(" Damage!\n");
+        }
+        if (!missed && monNameStr.equals("Slime") && Math.random() < 0.04) {
+            if (slipperyStacks < 5) {
+                slipperyStacks++;
+            }
+            attackText.append("You feel slippery! (Slippery stack: ").append(slipperyStacks).append(")\n");
+        }
+        attackText.append(monNameStr).append(" HP : ").append(monHP).append(breakMsg);
+        mainTextArea.setText(attackText.toString());
         setChoices(">", "", "", "");
         updateMonsterHUD();
     }
@@ -486,7 +556,16 @@ public class GameController {
         pHP -= monD;
         updateHUD();
         SoundManager.playHit();
-        mainTextArea.setText("You choose to defend the " + monNameStr + " attack\nDefend UP 1 Turn\n" + monNameStr + " attack You and dealt " + monD + " Damage!");
+        StringBuilder defendText = new StringBuilder();
+        defendText.append("You choose to defend the ").append(monNameStr).append(" attack\nDefend UP 1 Turn\n")
+                .append(monNameStr).append(" attack You and dealt ").append(monD).append(" Damage!");
+        if (monNameStr.equals("Slime") && monD > 0 && Math.random() < 0.7) {
+            if (slipperyStacks < 5) {
+                slipperyStacks++;
+            }
+            defendText.append("\nYou feel slippery! (Slippery stack: ").append(slipperyStacks).append(")");
+        }
+        mainTextArea.setText(defendText.toString());
         setChoices(">", "", "", "");
         updateMonsterHUD();
     }
@@ -497,7 +576,16 @@ public class GameController {
         pHP -= monD;
         SoundManager.playHit();
         updateHUD();
-        mainTextArea.setText(monNameStr + " attack You and dealt " + monD + " Damage!\n" + monNameStr + " HP : " + monHP);
+        StringBuilder monText = new StringBuilder();
+        monText.append(monNameStr).append(" attack You and dealt ").append(monD).append(" Damage!\n")
+                .append(monNameStr).append(" HP : ").append(monHP);
+        if (monNameStr.equals("Slime") && monD > 0 && Math.random() < 0.7) {
+            if (slipperyStacks < 5) {
+                slipperyStacks++;
+            }
+            monText.append("\nYou feel slippery! (Slippery stack: ").append(slipperyStacks).append(")");
+        }
+        mainTextArea.setText(monText.toString());
         updateMonsterHUD();
         if (pHP <= 0) { death(); return; }
         setChoices(">", "", "", "");
@@ -548,7 +636,10 @@ public class GameController {
     }
 
     private void restoreFromSettingShortcut() {
-        if (settingReturnPosition.isEmpty()) { tg(); return; }
+        if (settingReturnPosition.isEmpty()) {
+            setting();
+            return;
+        }
         position = settingReturnPosition;
         mainTextArea.setText(settingReturnText);
         setChoices(settingReturnChoices[0], settingReturnChoices[1], settingReturnChoices[2], settingReturnChoices[3]);
@@ -560,11 +651,19 @@ public class GameController {
     private void status() {
         position = "status";
         String durText = wpMaxDurability > 0 ? wpDurability + "/" + wpMaxDurability : "N/A";
-        mainTextArea.setText("=== STATUS ===\n"
-                + "HP: " + pHP + " / " + maxHP + "\n"
-                + "Weapon: " + Wp + "\n"
-                + "Durability: " + durText + "\n"
-                + "Silver Ring: " + (sRing == 1 ? "Yes" : "No"));
+        StringBuilder statusText = new StringBuilder();
+        statusText.append("=== STATUS ===\n")
+            .append("HP: ").append(pHP).append(" / ").append(maxHP).append("\n")
+            .append("Weapon: ").append(Wp).append("\n")
+            .append("Durability: ").append(durText).append("\n")
+            .append("Silver Ring: ").append(sRing == 1 ? "Yes" : "No");
+        if (vertigoStacks > 0) {
+            statusText.append("\nVertigo: ").append(vertigoStacks).append(" stack(s)");
+        }
+        if (slipperyStacks > 0) {
+            statusText.append("\nSlippery: ").append(slipperyStacks).append(" stack(s)");
+        }
+        mainTextArea.setText(statusText.toString());
         setChoices("Go back", "", "", "");
     }
 
@@ -671,6 +770,9 @@ public class GameController {
         ng = 0; ngm = 0; ngh = 0; nghs = 0;
         vsword = 0; osword = 0; sword = 0; dsword = 0; sRing = 0;
         selectedGrassIndex = 0;
+        vertigoStacks = 0;
+        slipperyStacks = 0;
+        slipperyActionCount = 0;
         prevp = "";
         inventoryReturnPosition = "";
         settingReturnPosition = "";
