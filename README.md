@@ -1,20 +1,23 @@
 # AdvantureGUI
 
-AdvantureGUI is a Java Swing GUI adventure game based on a text-adventure style flow.
+AdvantureGUI is a JavaFX GUI adventure game with a classic text-adventure flow.
 You explore areas, collect items, fight monsters, manage HP, and use inventory strategically.
 
 ## About The Game
 
 This project is a human-made adventure game with a GUI interface.
-The game includes:
+The current version includes:
 
-- Town / guard interaction flow
+- Town and guard interaction flow
 - Crossroad exploration (north, south, east, west)
 - Monster combat system (attack, defend, run)
-- Weapon drops with rarity chances
+- Multiple monster types with a monster HUD
+- Weapon drops with rarity chances and durability
 - Grass (healing item) collection and consumption by rarity
-- Inventory UI with selection arrows
-- Gear button for settings and bag button for quick inventory access
+- Inventory UI with selection arrows and item counts
+- Settings menu with fullscreen toggle
+- Quick restart after death or ending
+- Synthesized sound effects (no external audio files)
 
 ## Core Mechanics
 
@@ -26,14 +29,18 @@ Talk to the guard, complete requirements, get the Silver Ring, and unlock the en
 
 - Choose `Fight` in the East area.
 - Actions in battle:
-	- `Attack`
-	- `Defend`
-	- `Run`
-- Monster HP resets when a new fight starts after monster death.
+		- `Attack`
+		- `Defend`
+		- `Run`
+- Monsters rotate by area encounter:
+		- Orc (high HP, high damage, drops Silver Ring)
+		- Goblin (medium HP, grants Max HP bonus)
+		- Slime (low HP, grants HP recovery)
 
 ### 3. Weapon System
 
-Weapons affect player damage range.
+Weapons affect player damage range and now have durability.
+Weapons can break and revert to the Knife when durability reaches 0.
 
 Possible weapon drops from random item search:
 
@@ -42,7 +49,7 @@ Possible weapon drops from random item search:
 - Steel Sword (20%)
 - Old Sword (50%)
 
-### 4. Grass / Healing System
+### 4. Grass and Healing
 
 Grass can be collected in South and consumed in inventory.
 
@@ -62,57 +69,64 @@ Collection chances:
 
 ### 5. Inventory
 
-- Open inventory via bag icon button.
+- Open inventory via the bag icon button.
 - Navigate grass selection with `<` and `>` in inventory.
 - Eat selected grass with `Eat Grass`.
-- Empty/invalid choice buttons are hidden via opacity rules.
+- Item counts are shown for collected grass.
 
-### 6. UI Controls
+### 6. Progression and Training
 
-- Gear icon (top-left): open settings
-- Bag icon (right of choice panel): open inventory shortcut
-- Choice buttons: context-sensitive story and action options
+- South includes `Train (+Max HP)` to raise max HP and fully heal.
+- Settings menu shows current stats and weapon durability.
 
 ## How To Run
 
-You can run this game from source with Java.
+This project uses Gradle and JavaFX.
 
-### Option A: Compile directly with `javac`
-
-From `Advanture/src`:
+### Option A: Run with Gradle Wrapper
 
 ```bash
-javac module-info.java pack/Game.java pack/playersetup.java
-java pack.Game
+./gradlew run
 ```
 
-### Option B: Build with Ant (if installed)
+On Windows:
 
-From `Advanture`:
+```bat
+gradlew.bat run
+```
+
+### Option B: Build a Distribution
 
 ```bash
-ant -f build.xml
+./gradlew build
 ```
 
 ## Project Structure
 
 ```text
 README.md
-Advanture/
-	build.xml
-	src/
-		module-info.java
-		pack/
-			Game.java
-			choice.java
-			playersetup.java
-			Respon.java
-			package-info.java
+build.gradle
+gradle.properties
+settings.gradle
+src/
+	main/
+		java/
+			module-info.java
+			pack/
+				App.java
+				GameController.java
+				SoundManager.java
+				TitleController.java
+		resources/
+			pack/
+				game.fxml
+				title.fxml
+				style.css
 ```
 
 ## Notes
 
-- This project uses Java Swing for GUI rendering.
-- Game balance and drop rates can be tuned further in `Game.java`.
+- The UI is built with JavaFX and FXML.
+- Game balance and drop rates can be tuned in GameController.
 - Some class names and text intentionally preserve original project naming style.
-- at the beginning this project was 100% human-made with purpose to learning Java, since there are AI-tools, i'm start polish and change some algorithm with AI
+- At the beginning this project was 100% human-made with purpose to learning Java, since there are AI-tools, I start polish and change some algorithm with AI.
