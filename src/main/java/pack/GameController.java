@@ -43,6 +43,11 @@ public class GameController {
     private String inventoryReturnText = "";
     private String[] inventoryReturnChoices = {"", "", "", ""};
 
+    // Settings shortcut state
+    private String settingReturnPosition = "";
+    private String settingReturnText = "";
+    private String[] settingReturnChoices = {"", "", "", ""};
+
     @FXML
     public void initialize() {
         tg();
@@ -116,7 +121,10 @@ public class GameController {
 
     @FXML
     private void onSettingClicked() {
-        if (!position.equals("end") && !position.equals("death")) {
+        if (!position.equals("end") && !position.equals("death") && !position.equals("setting") && !position.equals("status")) {
+            settingReturnPosition = position;
+            settingReturnText = mainTextArea.getText();
+            settingReturnChoices = new String[]{c1.getText(), c2.getText(), c3.getText(), c4.getText()};
             setting();
         }
     }
@@ -192,7 +200,7 @@ public class GameController {
                 switch (choice) {
                     case "cho1": status(); break;
                     case "cho2": toggleFullscreen(); break;
-                    case "cho3": tg(); break;
+                    case "cho3": restoreFromSettingShortcut(); break;
                 }
                 break;
             case "status":
@@ -234,8 +242,7 @@ public class GameController {
             case "drink":
                 switch (choice) {
                     case "cho1": crossRoad(); break;
-                    case "cho2": lAround(); break;
-                    case "cho3": rest(); break;
+                    case "cho2": rest(); prevp = "north"; break;
                 }
                 break;
             case "rest":
@@ -287,7 +294,7 @@ public class GameController {
             case "inventory":
                 switch (choice) {
                     case "cho1":
-                        if (prevp.equals("shortcutInventory")) { restoreFromInventoryShortcut(); }
+                        if (!inventoryReturnPosition.isEmpty()) { restoreFromInventoryShortcut(); }
                         else { tg(); }
                         break;
                     case "cho2": eatGrass(); break;
@@ -370,7 +377,7 @@ public class GameController {
         updateHUD();
         SoundManager.playGulp();
         mainTextArea.setText("You drink River Water and feel refreshed!\n\nHP + 5");
-        setChoices("Go back to Crossroad", "Look Around", "Rest", "");
+        setChoices("Go back to Crossroad", "Rest", "", "");
     }
 
     private void south() {
@@ -540,6 +547,16 @@ public class GameController {
         setChoices("Status", isFullscreen ? "Windowed" : "Fullscreen", "Go back", "");
     }
 
+    private void restoreFromSettingShortcut() {
+        if (settingReturnPosition.isEmpty()) { tg(); return; }
+        position = settingReturnPosition;
+        mainTextArea.setText(settingReturnText);
+        setChoices(settingReturnChoices[0], settingReturnChoices[1], settingReturnChoices[2], settingReturnChoices[3]);
+        settingReturnPosition = "";
+        updateHUD();
+        updateMonsterHUD();
+    }
+
     private void status() {
         position = "status";
         String durText = wpMaxDurability > 0 ? wpDurability + "/" + wpMaxDurability : "N/A";
@@ -640,6 +657,8 @@ public class GameController {
         mainTextArea.setText(inventoryReturnText);
         setChoices(inventoryReturnChoices[0], inventoryReturnChoices[1], inventoryReturnChoices[2], inventoryReturnChoices[3]);
         inventoryReturnPosition = "";
+        updateHUD();
+        updateMonsterHUD();
     }
 
     // ========== Restart ==========
@@ -654,6 +673,7 @@ public class GameController {
         selectedGrassIndex = 0;
         prevp = "";
         inventoryReturnPosition = "";
+        settingReturnPosition = "";
         invButton.setVisible(true);
         settingButton.setVisible(true);
         updateHUD();
