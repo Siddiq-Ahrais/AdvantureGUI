@@ -18,6 +18,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JProgressBar;
+import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
 public class Game {
@@ -39,7 +40,7 @@ public class Game {
 	AnimatedChoiceButton sButton;
 	AnimatedChoiceButton c1,c2,c3,c4,invButton,settingButton;
 	JTextArea mTArea;//main text area
-	JLabel monNameLabel, monHPLabel;
+	JLabel monNameLabel, monHPLabel, monHPTextLabel;
 	JProgressBar monHPBar;
 	TitleScreenHandler TSHandler = new TitleScreenHandler();
 	ChoiceHandler cHandler = new ChoiceHandler();
@@ -138,8 +139,11 @@ public class Game {
 			return;
 		}
 
+		int rightLaneW = Math.min(320, Math.max(220, winW / 4));
 		int mainW = (int)(winW * 0.76);
 		int mainX = (winW - mainW) / 2;
+		int storyX = 20;
+		int storyW = Math.max(520, winW - rightLaneW - 40);
 		int titleY = (int)(winH * 0.18);
 		int titleH = (int)(winH * 0.26);
 		int mainY = (int)(winH * 0.18);
@@ -160,34 +164,54 @@ public class Game {
 		int startY = (int)(winH * 0.74);
 		int playerY = (int)(winH * 0.03);
 		int playerH = (int)(winH * 0.09);
+		int setY = 10;
+		int setSize = Math.max(22, playerH - 8);
+		playerY = setY;
+		playerH = setSize;
 
 		if(tNPanel!=null) tNPanel.setBounds(mainX, titleY, mainW, titleH);
 		if(sButton!=null && sButton.getParent()==con) sButton.setBounds(startX, startY, startW, startH);
-		if(mTPanel!=null) mTPanel.setBounds(mainX, mainY, mainW, mainH);
+		if(mTPanel!=null) mTPanel.setBounds(storyX, mainY, storyW, mainH);
 		if(cBPanel!=null) cBPanel.setBounds(choiceX, choiceY, choiceW, choiceH);
 		if(pPanel!=null) pPanel.setBounds(mainX, playerY, mainW, playerH);
 
-		// Monster HUD layout - positioned below player panel, right-aligned
+		// Monster HUD layout - move to right-side margin and center vertically
 		if(monPanel!=null) {
-			int monW = Math.min((int)(winW * 0.35), 340);
-			int monH = (int)(winH * 0.07);
-			int monX = winW - monW - mainX;
-			int monY = playerY + playerH + 4;
+			int sideStart = mainX + mainW + 10;
+			int sideW = winW - sideStart - 10;
+			int monW = Math.min(rightLaneW, Math.max(220, sideW));
+			if(sideW < monW) {
+				sideStart = Math.max(10, winW - monW - 10);
+				sideW = winW - sideStart - 10;
+			}
+			int monH = Math.max(36, (int)(winH * 0.07));
+			int monX = sideStart + Math.max(0, (sideW - monW) / 2);
+			int monY = (winH - monH) / 2;
 			monPanel.setBounds(monX, monY, monW, monH);
-			int nameW = monW / 3;
-			int barW = monW - nameW - 8;
+			int nameW = Math.max(90, monW / 3);
+			int hpW = Math.max(90, monW / 4);
+			int barW = monW - nameW - hpW - 16;
+			if(barW < 80) {
+				barW = 80;
+				int remaining = monW - barW - 16;
+				nameW = Math.max(70, remaining / 2);
+				hpW = Math.max(70, remaining - nameW);
+			}
 			if(monNameLabel!=null) {
 				monNameLabel.setBounds(4, 0, nameW, monH);
 			}
 			if(monHPBar!=null) {
-				monHPBar.setBounds(nameW + 4, monH / 4, barW * 2 / 3, monH / 2);
+				monHPBar.setBounds(nameW + 8, monH / 4, barW, monH / 2);
+			}
+			if(monHPTextLabel!=null) {
+				monHPTextLabel.setBounds(nameW + 8, monH / 4, barW, monH / 2);
 			}
 			if(monHPLabel!=null) {
-				monHPLabel.setBounds(nameW + 4 + barW * 2 / 3 + 4, 0, barW / 3, monH);
+				monHPLabel.setBounds(0, 0, 0, 0);
 			}
 		}
 
-		int dynamicNormal = Math.max(16, Math.min(36, winW / 32));
+		int dynamicNormal = Math.max(14, Math.min(30, winW / 36));
 		int dynamicTitle = Math.max(40, Math.min(120, winW / 11));
 		int dynamicStart = Math.max(14, Math.min(startH * 2 / 3, Math.min(startW / 5, winW / 22)));
 		nFont = new Font("Times New Roman", Font.PLAIN, dynamicNormal);
@@ -206,7 +230,7 @@ public class Game {
 		if(pPanel!=null && hLabel!=null && hNLabel!=null && wLabel!=null && wNLabel!=null) {
 			int pW = pPanel.getWidth();
 			int pH = pPanel.getHeight();
-			int midY = Math.max(2, pH / 2 - dynamicNormal / 2);
+			int midY = Math.max(2, (pH - dynamicNormal) / 2);
 			hLabel.setBounds(6, midY, Math.max(80, pW / 8), dynamicNormal + 10);
 			hNLabel.setBounds(Math.max(90, pW / 8), midY, Math.max(90, pW / 10), dynamicNormal + 10);
 			wLabel.setBounds(Math.max(200, pW / 3), midY, Math.max(170, pW / 5), dynamicNormal + 10);
@@ -214,43 +238,89 @@ public class Game {
 		}
 		if(sButton!=null) sButton.setFont(sFont);
 
-		if(invButton!=null && cBPanel!=null) {
-			int cellSize = cellSizeForLayout;
-			int gap = gapForLayout;
-			int invX = choiceX + choiceW + gap;
-			if(invX + cellSize > winW - 20) {
-				invX = winW - cellSize - 20;
-			}
-			invButton.setBounds(invX, choiceY, cellSize, cellSize);
-			updateInventoryButtonIcon(cellSize);
-		}
-
 		if(settingButton!=null && pPanel!=null) {
-			int setSize = Math.max(24, playerH - 6);
 			int setX = 10;
-			int setY = 10;
 			settingButton.setBounds(setX, setY, setSize, setSize);
 			updateSettingButtonIcon(setSize);
+			if(invButton!=null) {
+				int invSize = Math.max(22, setSize);
+				int invX = setX + setSize + 6;
+				int invY = setY;
+				invButton.setBounds(invX, invY, invSize, invSize);
+				updateInventoryButtonIcon(invSize);
+			}
 		}
 
+		if(monPanel!=null) {
+			bringMonsterHudToFront();
+		}
 		con.revalidate();
 		con.repaint();
 	}
 
 	public void updateMonsterHUD() {
-		boolean inCombat = position != null && 
-			(position.equals("fight") || position.equals("attack") || 
-			 position.equals("defend") || position.equals("monatt"));
-		if(monPanel != null) {
-			monPanel.setVisible(inCombat);
-			if(inCombat) {
-				monNameLabel.setText(monName);
-				int maxMon = monName.equals("Orc") ? 50 : monName.equals("Goblin") ? 30 : 15;
-				monHPBar.setMaximum(maxMon);
-				monHPBar.setValue(Math.max(0, monHP));
-				monHPLabel.setText(Math.max(0, monHP) + " / " + maxMon);
+		boolean inCombat = isInCombat();
+		setMonsterHudVisible(inCombat);
+		if(!inCombat) {
+			if(monHPTextLabel != null) {
+				monHPTextLabel.setText("");
 			}
+			return;
 		}
+		monNameLabel.setText(formatMonsterName(monName));
+		int maxMon = monName.equals("Orc") ? 50 : monName.equals("Goblin") ? 30 : 15;
+		monHPBar.setMaximum(maxMon);
+		monHPBar.setValue(Math.max(0, monHP));
+		monHPTextLabel.setText(Math.max(0, monHP) + " / " + maxMon);
+		monHPTextLabel.setVisible(true);
+		if(monHPLabel != null) {
+			monHPLabel.setText("");
+			monHPLabel.setVisible(false);
+		}
+	}
+
+	private boolean isInCombat() {
+		return position != null && (position.equals("fight") || position.equals("attack")
+			|| position.equals("defend") || position.equals("monatt"));
+	}
+
+	private void setMonsterHudVisible(boolean visible) {
+		if(monPanel == null) {
+			return;
+		}
+		monPanel.setVisible(visible);
+		if(!visible) {
+			return;
+		}
+		if(monHPTextLabel != null && monHPBar != null) {
+			monPanel.setComponentZOrder(monHPTextLabel, 0);
+			monPanel.setComponentZOrder(monNameLabel, 1);
+			monPanel.setComponentZOrder(monHPBar, 2);
+		}
+		bringMonsterHudToFront();
+	}
+
+	private void bringMonsterHudToFront() {
+		if(con != null && monPanel != null) {
+			con.setComponentZOrder(monPanel, 0);
+			monPanel.repaint();
+		}
+	}
+
+	private String formatMonsterName(String name) {
+		if(name == null || name.isEmpty()) {
+			return "";
+		}
+		String trimmed = name.trim();
+		String[] parts = trimmed.split("\\s+");
+		if(parts.length >= 2) {
+			return "<html><center>" + parts[0] + "<br>" + parts[1] + "</center></html>";
+		}
+		int maxLen = 10;
+		if(trimmed.length() > maxLen) {
+			return trimmed.substring(0, maxLen - 3) + "...";
+		}
+		return trimmed;
 	}
 
 	public void createGameScreen() {
@@ -370,27 +440,39 @@ public class Game {
 		// Monster HUD
 		monPanel = new JPanel();
 		monPanel.setBounds(120, 130, 360, 50);
-		monPanel.setBackground(new Color(20, 20, 20, 200));
+		monPanel.setBackground(new Color(20, 20, 20));
+		monPanel.setOpaque(true);
 		monPanel.setLayout(null);
 		monPanel.setVisible(false);
 		con.add(monPanel);
 
 		monNameLabel = new JLabel("Monster");
-		monNameLabel.setFont(nFont);
+		monNameLabel.setFont(nFont.deriveFont((float)Math.max(12, nFont.getSize() - 2)));
 		monNameLabel.setForeground(new Color(255, 80, 80));
+		monNameLabel.setVerticalAlignment(SwingConstants.CENTER);
+		monNameLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		monPanel.add(monNameLabel);
 
 		monHPBar = new JProgressBar(0, 100);
 		monHPBar.setValue(100);
 		monHPBar.setStringPainted(false);
+		monHPBar.setOpaque(true);
 		monHPBar.setBackground(new Color(60, 20, 20));
 		monHPBar.setForeground(new Color(220, 50, 50));
 		monHPBar.setBorderPainted(false);
 		monPanel.add(monHPBar);
 
+		monHPTextLabel = new JLabel("", SwingConstants.CENTER);
+		monHPTextLabel.setFont(nFont.deriveFont((float)Math.max(11, nFont.getSize() - 4)));
+		monHPTextLabel.setForeground(Color.white);
+		monHPTextLabel.setOpaque(false);
+		monPanel.add(monHPTextLabel);
+
 		monHPLabel = new JLabel("");
 		monHPLabel.setFont(nFont);
 		monHPLabel.setForeground(Color.white);
+		monHPLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+		monHPLabel.setVisible(false);
 		monPanel.add(monHPLabel);
 
 		updateLayout();
@@ -521,7 +603,7 @@ public class Game {
 		
 		setWeaponLabel();
 		hNLabel.setText("" + pHP);
-		
+		updateMonsterHUD();
 		tg();
 		playChoicePopup();
 	}
@@ -549,7 +631,7 @@ public class Game {
 		c2.setText("Attack the Guard");
 		c3.setText("Leave");
 		c4.setText("");
-		
+		updateMonsterHUD();
 	}	
 	public void setting() {
 		position ="setting";
@@ -558,7 +640,7 @@ public class Game {
 		c2.setText(isFullscreen ? "Windowed" : "Fullscreen");
 		c3.setText("Go back");
 		c4.setText("");
-		
+		updateMonsterHUD();
 	}
 	public void restoreFromSettingShortcut() {
 		if(settingReturnPosition.equals("")) {
@@ -650,7 +732,7 @@ public class Game {
 			c3.setText("");
 			c4.setText("");
 		}
-		
+		updateMonsterHUD();
 	}	
 
 	public void eatGrass() {
@@ -700,6 +782,7 @@ public class Game {
 			c3.setText("");
 			c4.setText("");
 		}
+		updateMonsterHUD();
 	}
 
 	public boolean hasAnyGrass() {
@@ -787,7 +870,7 @@ public class Game {
 		c2.setText("Go back");
 		c3.setText("Crossroad");
 		c4.setText("");
-		
+		updateMonsterHUD();
 		
 	}
 	public void attg() {
@@ -801,7 +884,7 @@ public class Game {
 		c2.setText("");
 		c3.setText("");
 		c4.setText("");
-		
+		updateMonsterHUD();
 	}
 	public void how(){
 		position ="how";//talk guard
@@ -817,7 +900,7 @@ public class Game {
 			c1.setEnabled(false);
 			c1.setButtonColors(new Color(18, 18, 18, 128), new Color(255, 255, 255, 128), new Color(220, 220, 220, 128));
 		}
-		
+		updateMonsterHUD();
 		
 	}
 	public void crossRoad() {
@@ -827,7 +910,7 @@ public class Game {
 		c2.setText("South");
 		c3.setText("West");
 		c4.setText("East");
-		
+		updateMonsterHUD();
 	}
 	public void north() {
 		position ="north";//talk guard
@@ -836,7 +919,7 @@ public class Game {
 		c2.setText("Let's not");
 		c3.setText("Rest");
 		c4.setText("Stay");
-		
+		updateMonsterHUD();
 	}
 	public void LAround() {
 		position ="LAround";//talk guard
@@ -845,7 +928,7 @@ public class Game {
 		c2.setText("Crossroad");
 		c3.setText("Rest");
 		c4.setText("");
-		
+		updateMonsterHUD();
 	}
 	public void rest() {
 		position ="rest";//talk guard
@@ -858,7 +941,7 @@ public class Game {
 		c2.setText("Look Around");
 		c3.setText("");
 		c4.setText("");
-		
+		updateMonsterHUD();
 	}
 	
 	public void drink() {
@@ -901,7 +984,7 @@ public class Game {
 		c2.setText("Look Around");
 		c3.setText("Rest");
 		c4.setText("");
-		
+		updateMonsterHUD();
 	}
 	public void south() {
 		position ="south";
@@ -910,7 +993,7 @@ public class Game {
 		c2.setText("Search random item (?)");
 		c3.setText("Train (+Max HP)");
 		c4.setText("Go back");
-		
+		updateMonsterHUD();
 	}
 	public void trainMaxHP() {
 		position ="trainHP";
@@ -923,6 +1006,7 @@ public class Game {
 		c2.setText("Crossroad");
 		c3.setText("");
 		c4.setText("");
+		updateMonsterHUD();
 	}
 	public void southLookAround() {
 		position = "southLAround";
@@ -936,6 +1020,7 @@ public class Game {
 		c2.setText("Search random item (?)");
 		c3.setText("Train (+Max HP)");
 		c4.setText("Go back");
+		updateMonsterHUD();
 	}
 	public void sr() {
 		position ="sr";
@@ -969,7 +1054,7 @@ public class Game {
 		c2.setText("Rest");
 		c3.setText("Go back");
 		c4.setText("Crossroad");
-		
+		updateMonsterHUD();
 	}
 	public void CHerb() {
 		position ="CHerb";//talk guard
@@ -994,7 +1079,7 @@ public class Game {
 		c2.setText("Rest");
 		c3.setText("Crossroad");
 		c4.setText("");
-		
+		updateMonsterHUD();
 	}
 	public void status() {
 		position ="status";
@@ -1013,7 +1098,7 @@ public class Game {
 		c2.setText("");
 		c3.setText("");
 		c4.setText("");
-		
+		updateMonsterHUD();
 	}	
 	public void fight() {
 		if(monHP<1) {
@@ -1160,7 +1245,7 @@ public class Game {
 		c2.setText("Rest");
 		c3.setText("Run");
 		c4.setText("");
-		
+		updateMonsterHUD();
 	}
 
 	public void death() {
@@ -1186,7 +1271,7 @@ public class Game {
 		invButton.setVisible(false);
 		settingButton.setEnabled(false);
 		settingButton.setVisible(false);
-		
+		updateMonsterHUD();
 	}
 	public void win() {
 		position ="win";
@@ -1229,7 +1314,7 @@ public class Game {
 		invButton.setVisible(false);
 		settingButton.setEnabled(false);
 		settingButton.setVisible(false);
-		
+		updateMonsterHUD();
 	}
 	public void restartGame() {
 		pHP = 15;
@@ -1275,6 +1360,7 @@ public class Game {
 		setWeaponLabel();
 		hNLabel.setText("" + pHP);
 		tg();
+		updateMonsterHUD();
 		playChoicePopup();
 	}
 		
@@ -1293,6 +1379,7 @@ public class Game {
 	public class InventoryButtonHandler implements ActionListener{
 		public void actionPerformed(ActionEvent event) {
 			openInventoryShortcut();
+			updateMonsterHUD();
 		}
 	}
 	public class SettingButtonHandler implements ActionListener{
@@ -1310,6 +1397,7 @@ public class Game {
 			}
 			setting();
 			playChoicePopup();
+			updateMonsterHUD();
 		}
 	}
 
@@ -1362,6 +1450,7 @@ public class Game {
 						win();
 					}else {
 					
+					updateMonsterHUD();
 					monatt();
 					}
 				break;

@@ -24,8 +24,11 @@
             <HBox id="playerHUD" alignment="CENTER_LEFT" spacing="15">
                 <padding><Insets top="10" right="20" bottom="5" left="20"/></padding>
                 <Button fx:id="settingButton" id="settingButton" styleClass="icon-button"
-                        text="⚙" style="-fx-font-size: 24; -fx-text-fill: white;"
-                        onAction="#onSettingClicked"/>
+                    text="⚙" style="-fx-font-size: 24; -fx-text-fill: white;"
+                    onAction="#onSettingClicked"/>
+                <Button fx:id="invButton" id="invButton" styleClass="icon-button"
+                    text="🎒" style="-fx-font-size: 22;"
+                    onAction="#onInventoryClicked"/>
                 <Label styleClass="hud-label" text="HP : "/>
                 <Label fx:id="hpLabel" styleClass="hud-value" text="15"/>
                 <Label styleClass="hud-label" text=" / "/>
@@ -33,6 +36,7 @@
                 <Region HBox.hgrow="ALWAYS"/>
                 <Label styleClass="hud-label" text="Weapon : "/>
                 <Label fx:id="weaponLabel" styleClass="hud-value" text="Knife"/>
+                <Label fx:id="vertigoIcon" styleClass="status-icon" text="🤮" visible="false" managed="false"/>
             </HBox>
 
             <!-- Monster HUD row (hidden by default) -->
@@ -68,11 +72,7 @@
                 <Button fx:id="c4" styleClass="choice-button" text="" onAction="#onChoice4"/>
             </VBox>
 
-            <VBox alignment="TOP_CENTER" spacing="4">
-                <Button fx:id="invButton" id="invButton" styleClass="icon-button"
-                        text="🎒" style="-fx-font-size: 22;"
-                        onAction="#onInventoryClicked"/>
-            </VBox>
+            <VBox alignment="TOP_CENTER" spacing="4"/>
         </HBox>
     </bottom>
 

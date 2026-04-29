@@ -17,7 +17,7 @@ public class GameController {
 
     // FXML-bound UI elements
     @FXML private BorderPane rootPane;
-    @FXML private Label hpLabel, maxHpLabel, weaponLabel;
+    @FXML private Label hpLabel, maxHpLabel, weaponLabel, vertigoIcon;
     @FXML private Label monsterName, monsterHPText;
     @FXML private ProgressBar monsterHPBar;
     @FXML private HBox monsterHUD;
@@ -67,6 +67,18 @@ public class GameController {
             showName += " (" + wpDurability + "/" + wpMaxDurability + ")";
         }
         weaponLabel.setText(showName);
+        updateStatusEffects();
+    }
+
+    private void updateStatusEffects() {
+        boolean showVertigo = vertigoStacks > 0;
+        if (vertigoIcon != null) {
+            vertigoIcon.setVisible(showVertigo);
+            vertigoIcon.setManaged(showVertigo);
+            if (showVertigo) {
+                vertigoIcon.setText("🤮 " + vertigoStacks);
+            }
+        }
     }
 
     private void updateMonsterHUD() {
